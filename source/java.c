@@ -229,64 +229,9 @@ typedef struct {
     int i;
 } ThreadArgs;
 
-int http_response_thread(SceSize size, void* argp) {
-    ThreadArgs* thread_params = (ThreadArgs*)argp;
-
-    debugPrintf("[Vita] HTTP thread started: userPtr=%p", thread_params->userPtr);
-    debugPrintf("[Vita] HTTP thread started: i=%p", thread_params->i);
-    debugPrintf("[Vita] HTTP thread started: arg3=%d", thread_params->arg3);
-
-    HttpResponse_soloader(thread_params->arg1, thread_params->arg2,
-                          thread_params->arg3, thread_params->arg4,
-                          thread_params->userPtr, thread_params->kw,
-                          thread_params->i);
-
-    debugPrintf("[Vita] HTTP thread complete for userPtr=%p", thread_params->userPtr);
-    return 0;
-}
 SceUID thread_id=-1;
 jint MyHttp_obj_connect(jmethodID id, va_list args)
 {
-    int R_1 = -28;
-    int R_2 = -1;
-    int ERROR = -8;
-    int ERROR_SERVER = 404;
-
-    // HttpResponse_soloader(0,0,-18,0,httpObj.UserPtr,httpObj.kw,httpObj.i);
-
-    ThreadArgs thread_args;
-
-    thread_args.arg1 = 0;
-    thread_args.arg2 = 0;
-    thread_args.arg3 = -18;
-    thread_args.arg4 = 0;
-    thread_args.userPtr = httpObj.UserPtr;
-    thread_args.kw = httpObj.kw;
-    thread_args.i = httpObj.i;
-    if(thread_id>=0)
-    {
-        return 0;
-    }
-
-    if(thread_id==-1)
-    {
-         thread_id = sceKernelCreateThread(
-            "http_thread",
-             http_response_thread,
-             0x10000100,
-             0x10000,
-             0,
-             0,
-             NULL
-    );
-    }
-
-    if (thread_id < 0) {
-        debugPrintf("[Vita] Failed to create thread: 0x%08X", thread_id);
-        return -8;
-    }
-
-    sceKernelStartThread(thread_id, sizeof(ThreadArgs), &thread_args);
     
     // Java 层正确处理返回 0
     return 0;

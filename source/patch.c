@@ -16,7 +16,10 @@ extern so_module so_mod;
 
 LdModule *bootstrap_mod                                      = NULL;
 int (*bootstrap_start)(int argc, char *argv[], char *envp[]) = NULL;
-
+int bootstrap_start_soloader(int argc, char *argv[], char *envp[])
+{
+    return 0;
+}
 
 void so_patch(void) {
     // Sample hook
