@@ -68,104 +68,6 @@
 
 const unsigned int __page_size = PAGE_SIZE;
 
-// RefBase 的简化实现
-typedef struct
-{
-    int   strong_refs;
-    int   weak_refs;
-    void *extensions;
-} RefBaseImpl;
-
-// RefBase 构造函数
-void _ZN7android7RefBaseC2Ev(void *self) {
-    l_debug("_ZN7android7RefBaseC2Ev: %p", self);
-    //    RefBaseImpl* ref = (RefBaseImpl*)self;
-    //    ref->strong_refs = 0;
-    //    ref->weak_refs = 0;
-    //    ref->extensions = NULL;
-}
-
-// RefBase 析构函数
-void _ZN7android7RefBaseD2Ev(void *self) {
-    l_debug("_ZN7android7RefBaseD2Ev: %p", self);
-    //    RefBaseImpl* ref = (RefBaseImpl*)self;
-    //    if (ref->extensions) {
-    //        free(ref->extensions);
-    //    }
-}
-
-void _ZN7android7RefBase10onFirstRefEv(void *self) {
-    l_debug("_ZN7android7RefBase10onFirstRefEv: %p", self);
-}
-
-void _ZN7android7RefBase15onLastStrongRefEPKv(void *self, const void *id) {
-    l_debug("_ZN7android7RefBase15onLastStrongRefEPKv: %p, id = %d", self, id);
-}
-
-void _ZN7android7RefBase13onLastWeakRefEPKv(void *self, const void *id) {
-    l_debug("_ZN7android7RefBase13onLastWeakRefEPKv: %p, id = %d", self, id);
-}
-
-int _ZN7android7RefBase20onIncStrongAttemptedEjPKv(void *self, unsigned int flags, const void *id) {
-    l_debug("_ZN7android7RefBase20onIncStrongAttemptedEjPKv: %p, flags = %d, id = %d", self, flags, id);
-    return 1;
-}
-
-// Thread 类的完全空实现
-void _ZN7android6ThreadC2Eb(void *self, int canCallJava) {
-    l_debug("[Thread] Constructor (EMPTY): %p, canCallJava: %d", self, canCallJava);
-}
-
-void _ZN7android6ThreadD0Ev(void *self) {
-    l_debug("[Thread] D0 destructor (EMPTY): %p", self);
-}
-
-void _ZN7android6ThreadD1Ev(void *self) {
-    l_debug("[Thread] D1 destructor (EMPTY): %p", self);
-}
-
-void _ZN7android6ThreadD2Ev(void *self) {
-    l_debug("[Thread] D2 destructor (EMPTY): %p", self);
-}
-
-int _ZN7android6Thread10readyToRunEv(void *self) {
-    l_debug("[Thread] readyToRun (EMPTY): %p", self);
-    return 1;
-}
-
-void _ZN7android6Thread11requestExitEv(void *self) {
-    l_debug("[Thread] requestExit (EMPTY): %p", self);
-}
-
-int _ZN7android6Thread3runEPKcij(void *self, const char *name, int priority, size_t stack) {
-    l_debug("[Thread] run (EMPTY): %p, name: %s, priority: %d, stack: %zu",
-            self, name ? name : "NULL", priority, stack);
-    return 1;
-}
-
-typedef struct
-{
-    int ref_count;  // 简单的引用计数
-} SimpleRefBase;
-
-void _ZNK7android7RefBase9incStrongEPKv(void *self, const void *id) {
-    SimpleRefBase *ref = (SimpleRefBase *)self;
-    ref->ref_count++;
-    l_debug("[RefBase] incStrong: %p -> count=%d", self, ref->ref_count);
-}
-
-void _ZNK7android7RefBase9decStrongEPKv(void *self, const void *id) {
-    SimpleRefBase *ref = (SimpleRefBase *)self;
-    ref->ref_count--;
-    l_debug("[RefBase] decStrong: %p -> count=%d", self, ref->ref_count);
-}
-
-int chdir_wrap(const char *__path) {
-    l_debug("chdir invoke %s", __path);
-    // return chdir(__path);
-    return chdir(DATA_PATH);
-}
-
 // additional aeabi extern
 extern void *__aeabi_i2f;
 extern void *__aeabi_fmul;
@@ -235,24 +137,37 @@ extern void *__stack_chk_guard;
 extern void *__swbuf;
 
 extern void *__aeabi_llsl;
+extern void *__aeabi_fadd;
+extern void *__aeabi_fdiv;
+extern void *__aeabi_fcmpge;
+extern void *__aeabi_fcmplt;
+extern void *__aeabi_fcmpeq;
+extern void *__aeabi_f2d;
+extern void *__aeabi_fcmple;
+extern void *__aeabi_fsub;
+extern void *__aeabi_ui2f;
+extern void *__aeabi_fcmpgt;
 
-extern const char  *BIONIC_ctype_;
+extern const char *BIONIC_ctype_;
 extern const short *BIONIC_tolower_tab_;
 extern const short *BIONIC_toupper_tab_;
 
-static FILE        __sF_fake[3];
+static FILE __sF_fake[3];
 so_default_dynlib *default_dynlib_m;
-int                size_default_dynlib;
+int size_default_dynlib;
 
-void *dlsym_soloader(void *handle, const char *symbol) {
+void *dlsym_soloader(void *handle, const char *symbol)
+{
     // Usage example:
     // if (strcmp("AMotionEvent_getAxisValue", symbol) == 0)
     //    return &AMotionEvent_getAxisValue;
 
-    int   size_default_dynlib_type = sizeof(so_default_dynlib);
-    void *result                   = NULL;
-    for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++) {
-        if (strcmp(symbol, default_dynlib_m[j].symbol) == 0) {
+    int size_default_dynlib_type = sizeof(so_default_dynlib);
+    void *result = NULL;
+    for (int j = 0; j < size_default_dynlib / size_default_dynlib_type; j++)
+    {
+        if (strcmp(symbol, default_dynlib_m[j].symbol) == 0)
+        {
             result = (void *)default_dynlib_m[j].func;
             l_debug("find symbol \"%s\".  %p", symbol, result);
             break;
@@ -263,39 +178,46 @@ void *dlsym_soloader(void *handle, const char *symbol) {
     return result;
 }
 
-void *dlopen_soloader(const char *file, int mode) {
+void *dlopen_soloader(const char *file, int mode)
+{
     l_debug("dlopen_soloader \"%s\".  mode:%p", file, mode);
 
     return default_dynlib_m;
 }
 
-int fprintf0(FILE *stream, const char *format, char *a1, int a3, char *a2) {
+int fprintf0(FILE *stream, const char *format, char *a1, int a3, char *a2)
+{
     l_debug("fprintf");
     l_debug(format, a1, a3, a2);
     return 0;
 }
 
-int libandroidfw(void) {
+int libandroidfw(void)
+{
     l_debug("libandroidfw");
     return 0;
 }
 
-int libutils(void) {
+int libutils(void)
+{
     l_debug("libutils");
     return 0;
 }
 
-int libmedia(void) {
+int libmedia(void)
+{
     l_debug("libmedia");
     return 0;
 }
 
-int setjmp0(jmp_buf v) {
+int setjmp0(jmp_buf v)
+{
     l_debug("setjmp0");
     return setjmp(v);
 }
 
-int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
+int jniRegisterNativeMethods(int a1, int a2, int a3, int a4)
+{
     l_debug("jniRegisterNativeMethods(%p,%s,%p,%d)", a1, a2, a3, a4);
     char **a = (char **)a3;
     l_debug("jniRegisterNativeMethods Methods:(%s,%s,%p)", a[0], a[1], a[2]);
@@ -303,28 +225,27 @@ int jniRegisterNativeMethods(int a1, int a2, int a3, int a4) {
     return 0;
 }
 
-typedef int64_t nsecs_t;       // nano-seconds
+typedef int64_t nsecs_t; // nano-seconds
 
 nsecs_t systemTime(int clock)
 {
     // l_debug("systemTime(%d)",clock);
 #if defined(HAVE_POSIX_CLOCKS)
     static const clockid_t clocks[] = {
-            CLOCK_REALTIME,
-            CLOCK_MONOTONIC,
-            CLOCK_PROCESS_CPUTIME_ID,
-            CLOCK_THREAD_CPUTIME_ID
-    };
+        CLOCK_REALTIME,
+        CLOCK_MONOTONIC,
+        CLOCK_PROCESS_CPUTIME_ID,
+        CLOCK_THREAD_CPUTIME_ID};
     struct timespec t;
     t.tv_sec = t.tv_nsec = 0;
     clock_gettime(clocks[clock], &t);
-    return nsecs_t(t.tv_sec)*1000000000LL + t.tv_nsec;
+    return nsecs_t(t.tv_sec) * 1000000000LL + t.tv_nsec;
 #else
     // we don't support the clocks here.
     struct timeval t;
     t.tv_sec = t.tv_usec = 0;
     gettimeofday(&t, NULL);
-    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec)*1000000000LL + (nsecs_t)(t.tv_usec)*1000LL;
+    nsecs_t nanoSeconds = (nsecs_t)(t.tv_sec) * 1000000000LL + (nsecs_t)(t.tv_usec) * 1000LL;
     // l_debug("systemTime => (%lld)", nanoSeconds);
     return nanoSeconds;
 #endif
@@ -340,6 +261,24 @@ int select0()
 {
     //l_debug("select0");
     return 1;
+}
+
+int eglCreatePbufferSurface()
+{
+    l_debug("eglCreatePbufferSurface()");
+    return 0;
+}
+
+int AndroidBitmap_unlockPixels()
+{
+    l_debug("AndroidBitmap_unlockPixels()");
+    return 0;
+}
+
+int AndroidBitmap_lockPixels()
+{
+    l_debug("AndroidBitmap_lockPixels()");
+    return 0;
 }
 
 so_default_dynlib default_dynlib[] = {
@@ -388,33 +327,6 @@ so_default_dynlib default_dynlib[] = {
     {"_ZN7android12SharedBuffer7deallocEPKS0_", (uintptr_t)&android_SharedBuffer_dealloc},
     {"_ZNK7android12SharedBuffer10editResizeEj", (uintptr_t)&android_SharedBuffer_editResize},
     {"_ZNK7android12SharedBuffer7releaseEj", (uintptr_t)&android_SharedBuffer_release},
-
-    // Android RefBase
-    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&_ZN7android7RefBaseC2Ev},
-    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&_ZN7android7RefBaseD2Ev},
-    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&_ZN7android7RefBase10onFirstRefEv},
-    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&_ZN7android7RefBase15onLastStrongRefEPKv},
-    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&_ZN7android7RefBase13onLastWeakRefEPKv},
-    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&_ZN7android7RefBase20onIncStrongAttemptedEjPKv},
-
-    // Android Thread
-    {"_ZN7android6ThreadC2Eb", (uintptr_t)&_ZN7android6ThreadC2Eb},
-    {"_ZN7android6ThreadD0Ev", (uintptr_t)&_ZN7android6ThreadD0Ev},
-    {"_ZN7android6ThreadD1Ev", (uintptr_t)&_ZN7android6ThreadD1Ev},
-    {"_ZN7android6ThreadD2Ev", (uintptr_t)&_ZN7android6ThreadD2Ev},
-    {"_ZN7android6Thread10readyToRunEv", (uintptr_t)&_ZN7android6Thread10readyToRunEv},
-    {"_ZN7android6Thread11requestExitEv", (uintptr_t)&_ZN7android6Thread11requestExitEv},
-    {"_ZN7android6Thread3runEPKcij", (uintptr_t)&_ZN7android6Thread3runEPKcij},
-
-    // Android RefBase
-    {"_ZN7android7RefBaseC2Ev", (uintptr_t)&ret0},
-    {"_ZNK7android7RefBase9decStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZNK7android7RefBase9incStrongEPKv", (uintptr_t)&_ZNK7android7RefBase9incStrongEPKv},
-    {"_ZN7android7RefBase10onFirstRefEv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase20onIncStrongAttemptedEjPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase15onLastStrongRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBase13onLastWeakRefEPKv", (uintptr_t)&ret0},
-    {"_ZN7android7RefBaseD2Ev", (uintptr_t)&ret0},
 
     {"_ZNSt8bad_castD1Ev", (uintptr_t)&_ZNSt8bad_castD1Ev},
     {"_ZNSt9exceptionD2Ev", (uintptr_t)&_ZNSt9exceptionD2Ev},
@@ -711,11 +623,10 @@ so_default_dynlib default_dynlib[] = {
 
     {"access", (uintptr_t)&access},
     {"basename", (uintptr_t)&basename},
-    {"chdir", (uintptr_t)&chdir_wrap},
     // { "chdir", (uintptr_t)&chdir },
     {"chmod", (uintptr_t)&chmod},
     {"dup", (uintptr_t)&dup_soloader},
-    {"fseeko", (uintptr_t)&fseeko},  // TODO: wrap normal fseek for SceLibc version?
+    {"fseeko", (uintptr_t)&fseeko}, // TODO: wrap normal fseek for SceLibc version?
     {"ftello", (uintptr_t)&ftello},
     {"ftruncate", (uintptr_t)&ftruncate},
     {"getcwd", (uintptr_t)&getcwd},
@@ -779,22 +690,22 @@ so_default_dynlib default_dynlib[] = {
     {"eglTerminate", (uintptr_t)&eglTerminate},
 
     // additional EGL Hook
-    {"eglGetCurrentDisplay", (uintptr_t)&ret0},
+    {"eglGetCurrentDisplay", (uintptr_t)&ret1},
     {"eglSwapInterval", (uintptr_t)&eglSwapInterval},
-    {"eglCreatePbufferSurface", (uintptr_t)&ret0},
-    {"eglCreatePixmapSurface", (uintptr_t)&ret0},
-    {"eglQueryAPI", (uintptr_t)&ret0},
-    {"eglWaitClient", (uintptr_t)&ret0},
-    {"eglCreatePbufferFromClientBuffer", (uintptr_t)&ret0},
-    {"eglSurfaceAttrib", (uintptr_t)&ret0},
-    {"eglBindTexImage", (uintptr_t)&ret0},
-    {"eglReleaseTexImage", (uintptr_t)&ret0},
-    {"eglGetCurrentSurface", (uintptr_t)&ret0},
-    {"eglWaitGL", (uintptr_t)&ret0},
-    {"eglWaitNative", (uintptr_t)&ret0},
-    {"eglCopyBuffers", (uintptr_t)&ret0},
-    {"eglLockSurfaceKHR", (uintptr_t)&ret0},
-    {"eglUnlockSurfaceKHR", (uintptr_t)&ret0},
+    {"eglCreatePbufferSurface", (uintptr_t)&eglCreatePbufferSurface},
+    {"eglCreatePixmapSurface", (uintptr_t)&ret1},
+    {"eglQueryAPI", (uintptr_t)&ret1},
+    {"eglWaitClient", (uintptr_t)&ret1},
+    {"eglCreatePbufferFromClientBuffer", (uintptr_t)&ret1},
+    {"eglSurfaceAttrib", (uintptr_t)&ret1},
+    {"eglBindTexImage", (uintptr_t)&ret1},
+    {"eglReleaseTexImage", (uintptr_t)&ret1},
+    {"eglGetCurrentSurface", (uintptr_t)&ret1},
+    {"eglWaitGL", (uintptr_t)&ret1},
+    {"eglWaitNative", (uintptr_t)&ret1},
+    {"eglCopyBuffers", (uintptr_t)&ret1},
+    {"eglLockSurfaceKHR", (uintptr_t)&ret1},
+    {"eglUnlockSurfaceKHR", (uintptr_t)&ret1},
 
     // OpenGL
     {"glActiveTexture", (uintptr_t)&glActiveTexture},
@@ -1285,8 +1196,8 @@ so_default_dynlib default_dynlib[] = {
     {"setenv", (uintptr_t)&setenv_soloader},
 
     // Jmp
-    {"setjmp", (uintptr_t)&setjmp0},   // TODO: May have different struct size?
-    {"longjmp", (uintptr_t)&longjmp},  // TODO: May have different struct size?
+    {"setjmp", (uintptr_t)&setjmp0},  // TODO: May have different struct size?
+    {"longjmp", (uintptr_t)&longjmp}, // TODO: May have different struct size?
 
     // Signals
     {"bsd_signal", (uintptr_t)&signal},
@@ -1321,33 +1232,27 @@ so_default_dynlib default_dynlib[] = {
     {"jniRegisterNativeMethods", (uintptr_t)&jniRegisterNativeMethods},
     {"epoll_create", (uintptr_t)&ret0},
 
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tii20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEbi", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setEijiiijPFviPvS1_ES1_iRKNS_2spINS_7IMemoryEEEb", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_t", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack3setE19audio_stream_type_tj14audio_format_tji20audio_output_flags_tPFviPvS4_ES4_iRKNS_2spINS_7IMemoryEEEbiNS0_13transfer_typeEPK20audio_offload_info_ti", (uintptr_t)&libmedia},
-    {"_ZNK7android10AudioTrack9initCheckEv", (uintptr_t)&libmedia},
-    {"_ZN7android10AudioTrack5startEv", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiNS0_12record_flagsEPFviPvS4_ES4_ibi", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ibi", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setEijijijPFviPvS1_ES1_ib", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord5startEv", (uintptr_t)&libmedia},
-    {"_ZN7android11AudioRecord3setE14audio_source_tj14audio_format_tjiPFviPvS3_ES3_ibiNS0_13transfer_typeE19audio_input_flags_t", (uintptr_t)&libmedia},
+    {"AndroidBitmap_unlockPixels", (uintptr_t)&ret1},
+    {"AndroidBitmap_lockPixels", (uintptr_t)&ret1},
 
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", (uintptr_t)&libutils},
-    {"_ZN7android9ZipFileRO4openEPKc", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15uncompressEntryEPvS1_", (uintptr_t)&libutils},
-    {"_ZNK7android9ZipFileRO15findEntryByNameEPKc", (uintptr_t)&libutils},
+    {"__aeabi_fadd", (uintptr_t)&__aeabi_fadd},
+    {"__aeabi_fdiv", (uintptr_t)&__aeabi_fdiv},
+    {"__aeabi_fcmpge", (uintptr_t)&__aeabi_fcmpge},
+    {"__aeabi_fcmplt", (uintptr_t)&__aeabi_fcmplt},
+    {"__aeabi_fcmpeq", (uintptr_t)&__aeabi_fcmpeq},
+    {"__aeabi_f2d", (uintptr_t)&__aeabi_f2d},
+    {"__aeabi_fcmple", (uintptr_t)&__aeabi_fcmple},
+    {"__aeabi_fsub", (uintptr_t)&__aeabi_fsub},
+    {"__aeabi_ui2f", (uintptr_t)&__aeabi_ui2f},
+    {"__aeabi_fcmpgt", (uintptr_t)&__aeabi_fcmpgt},
 };
 
-void resolve_imports(so_module *mod) {
-    __sF_fake[0]        = *stdin;
-    __sF_fake[1]        = *stdout;
-    __sF_fake[2]        = *stderr;
-    default_dynlib_m    = default_dynlib;
+void resolve_imports(so_module *mod)
+{
+    __sF_fake[0] = *stdin;
+    __sF_fake[1] = *stdout;
+    __sF_fake[2] = *stderr;
+    default_dynlib_m = default_dynlib;
     size_default_dynlib = sizeof(default_dynlib);
     so_resolve(mod, default_dynlib, size_default_dynlib, 0);
 }

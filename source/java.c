@@ -533,7 +533,8 @@ NameToMethodID nameToMethodId[] = {
     {48, "applicationDownloadGetNetowrkPauseStatus", METHOD_TYPE_INT, applicationDownloadGetNetowrkPauseStatus},
     {49, "getDownloadApplicationBodySizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationBodySizeFromIndex},
     {50, "getDownloadApplicationSizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationSizeFromIndex},
-    {50, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
+    {51, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
+    {52, "currentTimeMillis", METHOD_TYPE_INT, NULL},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -547,7 +548,7 @@ MethodsFloat methodsFloat[] = {
 };
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
-    {100, GetCurrentTime},
+    {52, GetCurrentTime},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

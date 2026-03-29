@@ -20,6 +20,7 @@ int _newlib_heap_size_user = 256 * 1024 * 1024;
 #define SCREEN_W 960
 #define SCREEN_H 544
 so_module so_mod;
+so_module libmc_so_mod;
 
 jobjectArray JobjectArray;
 int          StartOffset;
@@ -56,6 +57,10 @@ int main() {
     JNI_OnLoad(&jvm, 0);
     debugPrintf("JNI_OnLoad over \n");
 
+    int (*JNI_OnLoad0)(void *jvm, int reserved) = (void *)so_symbol(&libmc_so_mod, "JNI_OnLoad");
+    JNI_OnLoad0(&jvm, 0);
+    debugPrintf("JNI_OnLoad0 over \n");
+
     gl_init();
     eglSwapInterval(0, 2);
     int a2=123456789;
@@ -64,8 +69,8 @@ int main() {
     native_onCreate(&jni,a2,0);
     debugPrintf("native_onCreate over \n");
     
-    int (*native_onStart)(void) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main7onStartEP7_JNIEnvP8_jobject");
-    native_onStart();
+    int (*native_onStart)(void *, int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main7onStartEP7_JNIEnvP8_jobject");
+    native_onStart(&jni,0);
     debugPrintf("native_onStart over \n");
 
     int (*native_onSurfaceCreated)(void *,int,int,int,int,int,char) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main16onSurfaceCreatedEP7_JNIEnvP8_jobjectS3_S3_iii");

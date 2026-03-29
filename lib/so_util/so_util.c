@@ -15,6 +15,7 @@
 
 #include "utils/dialog.h"
 #include "so_util.h"
+#include "utils/logger.h"
 
 #ifndef SCE_KERNEL_MEMBLOCK_TYPE_USER_RX
 #define SCE_KERNEL_MEMBLOCK_TYPE_USER_RX                 (0x0C20D050)
@@ -119,6 +120,7 @@ int _so_load(so_module *mod, SceUID so_blockid, void *so_data, uintptr_t load_ad
 
     if (memcmp(so_data, ELFMAG, SELFMAG) != 0) {
         res = -1;
+        debugPrintf("memcmp");
         goto err_free_so;
     }
 
@@ -269,11 +271,16 @@ int _so_load(so_module *mod, SceUID so_blockid, void *so_data, uintptr_t load_ad
     return 0;
 
     err_free_data:
+    debugPrintf("err_free_data");
     for (int i = 0; i < mod->n_data; i++)
         sceKernelFreeMemBlock(mod->data_blockid[i]);
     err_free_text:
+    debugPrintf("err_free_text");
+
     sceKernelFreeMemBlock(mod->text_blockid);
     err_free_so:
+    debugPrintf("err_free_so");
+
     sceKernelFreeMemBlock(so_blockid);
 
     return res;
@@ -303,14 +310,20 @@ int so_file_load(so_module *mod, const char *filename, uintptr_t load_addr) {
 
     SceUID fd = sceIoOpen(filename, SCE_O_RDONLY, 0);
     if (fd < 0)
+    {
+        debugPrintf("fd:%d",fd);
         return fd;
+    }
 
     size_t so_size = sceIoLseek(fd, 0, SCE_SEEK_END);
     sceIoLseek(fd, 0, SCE_SEEK_SET);
 
     so_blockid = sceKernelAllocMemBlock("so block", SCE_KERNEL_MEMBLOCK_TYPE_USER_RW, (so_size + 0xfff) & ~0xfff, NULL);
     if (so_blockid < 0)
+    {
         return so_blockid;
+    }
+    debugPrintf("so_blockid:%d",so_blockid);
 
     sceKernelGetMemBlockBase(so_blockid, &so_data);
 

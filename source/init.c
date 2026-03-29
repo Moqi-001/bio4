@@ -27,6 +27,7 @@
 #include "reimpl/controls.h"
 
 extern so_module so_mod;
+extern so_module libmc_so_mod;
 
 void soloader_init_all() {
     // Launch `app0:configurator.bin` on `-config` init param
@@ -66,13 +67,35 @@ void soloader_init_all() {
             SO_PATH);
     }
 
-    if (so_file_load(&so_mod, SO_PATH, LOAD_ADDRESS) < 0) {
+    if (!file_exists(SO_PATH_0)) {
+        fatal_error(
+            "Looks like you haven't installed the data files for this "
+            "port, or they are in an incorrect location. Please make "
+            "sure that you have %s file exactly at that path.",
+            SO_PATH_0);
+    }
+
+    if (so_file_load(&libmc_so_mod, SO_PATH_0, LOAD_ADDRESS) < 0) {
+        l_fatal("libSO could not be loaded.");
+        fatal_error("Error: could not load %s.", SO_PATH_0);
+    }
+
+    so_relocate(&libmc_so_mod);
+    l_success("libSO relocated.");
+
+    resolve_imports(&libmc_so_mod);
+    l_success("libSO imports resolved.");
+
+    so_flush_caches(&libmc_so_mod);
+    l_success("libSO caches flushed.");
+
+    so_initialize(&libmc_so_mod);
+    l_success("libSO initialized.");
+
+    if (so_file_load(&so_mod, SO_PATH, LOAD_ADDRESS+0x1000000) < 0) {
         l_fatal("SO could not be loaded.");
         fatal_error("Error: could not load %s.", SO_PATH);
     }
-
-    l_debug("SO text base: %p", so_mod.text_base);
-    l_debug("SO text size: %u", so_mod.text_size);
 
     settings_load();
     l_success("Settings loaded.");

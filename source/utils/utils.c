@@ -256,7 +256,7 @@ bool module_loaded(const char * name) {
 }
 
 int ret0(void) {
-    // debugPrintf("ret0");
+    debugPrintf("ret0");
     return 0;
 }
 
