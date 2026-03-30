@@ -23,34 +23,47 @@ so_module so_mod;
 so_module libmc_so_mod;
 
 jobjectArray JobjectArray;
-int          StartOffset;
-char        *dspUserID;
+int StartOffset;
+char *dspUserID;
 
 int main_thread(SceSize args, void *argp)
 {
-    debugPrintf("RenderUpdate strart \n");
-	int (* native_onDrawFrame)(void*,int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main11onDrawFrameEP7_JNIEnvP8_jobjectS3_");
-    int fpsLock=31;
+    debugPrintf("native_onDrawFrame strart \n");
+    int (*native_onDrawFrame)(void *, int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main11onDrawFrameEP7_JNIEnvP8_jobjectS3_");
+    int (*native_setStereoHard)(void *, int, int, char) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main13setStereoHardEP7_JNIEnvP8_jobjectS3_h");
+    int fpsLock = 44;
     uint32_t last_render_time = sceKernelGetProcessTimeLow();
-    uint32_t delta = (1000000 / (fpsLock+1));
+    uint32_t delta = (1000000 / (fpsLock + 1));
 
-    while (1) {
-            //controls_poll();
-            native_onDrawFrame(&jni,0);
-
-            while (sceKernelGetProcessTimeLow() - last_render_time < delta) {
-                sched_yield();
+    while (1)
+    {
+        //controls_poll();
+        if (native_onDrawFrame(&jni, 0) == 1)
+        {
+            debugPrintf("native_setStereoHard strart %p\n", native_setStereoHard);
+            if (native_setStereoHard == 0)
+            {
+                native_setStereoHard = LOAD_ADDRESS + 0xD1258 + 1 + 0x1000000;
             }
-            last_render_time = sceKernelGetProcessTimeLow();
-            gl_swap();
+            native_setStereoHard(&StartOffset, 0, 0, 0);
+            debugPrintf("native_setStereoHard end \n");
         }
+
+        while (sceKernelGetProcessTimeLow() - last_render_time < delta)
+        {
+            sched_yield();
+        }
+        last_render_time = sceKernelGetProcessTimeLow();
+        gl_swap();
+    }
     debugPrintf("RenderUpdate over \n");
-	return 0;
+    return 0;
 }
 
 jobjectArray JobjectArray;
 
-int main() {
+int main()
+{
     remove(LOG_PATH);
     soloader_init_all();
     int (*JNI_OnLoad)(void *jvm, int reserved) = (void *)so_symbol(&so_mod, "JNI_OnLoad");
@@ -63,25 +76,24 @@ int main() {
 
     gl_init();
     eglSwapInterval(0, 2);
-    int a2=123456789;
 
-    int (*native_onCreate)(void *, int,int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main8onCreateEP7_JNIEnvP8_jobjectS3_");
-    native_onCreate(&jni,a2,0);
+    int (*native_onCreate)(void *, int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main8onCreateEP7_JNIEnvP8_jobjectS3_");
+    native_onCreate(&jni, 0);
     debugPrintf("native_onCreate over \n");
-    
+
     int (*native_onStart)(void *, int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main7onStartEP7_JNIEnvP8_jobject");
-    native_onStart(&jni,0);
+    native_onStart(&jni, 0);
     debugPrintf("native_onStart over \n");
 
-    int (*native_onSurfaceCreated)(void *,int,int,int,int,int,char) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main16onSurfaceCreatedEP7_JNIEnvP8_jobjectS3_S3_iii");
-    native_onSurfaceCreated(&jni,a2,0,0,SCREEN_W,SCREEN_H,0);
+    int (*native_onSurfaceCreated)(void *, int, int, int, int, int, char) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main16onSurfaceCreatedEP7_JNIEnvP8_jobjectS3_S3_ii");
+    native_onSurfaceCreated(&jni, 0, 0, 0, SCREEN_W, SCREEN_H, 0);
     debugPrintf("native_onSurfaceCreated over \n");
 
-    int (*native_onSurfaceChanged)(void *,int,int,int,int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main16onSurfaceChangedEP7_JNIEnvP8_jobjectS3_ii");
-    native_onSurfaceChanged(&jni,a2,0,SCREEN_W,SCREEN_H);
+    int (*native_onSurfaceChanged)(void *, int, int, int, int) = (void *)so_symbol(&so_mod, "_ZN9Bio4_Main16onSurfaceChangedEP7_JNIEnvP8_jobjectS3_ii");
+    native_onSurfaceChanged(&jni, 0, 0, SCREEN_W, SCREEN_H);
     debugPrintf("native_onSurfaceChanged over \n");
 
-    SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40,2* 128 * 1024, 0, 0, NULL);
-	sceKernelStartThread(thid, 0, NULL);
+    SceUID thid = sceKernelCreateThread("main_thread", (SceKernelThreadEntry)main_thread, 0x40, 2 * 128 * 1024, 0, 0, NULL);
+    sceKernelStartThread(thid, 0, NULL);
     return sceKernelExitDeleteThread(0);
 }

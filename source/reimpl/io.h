@@ -86,6 +86,8 @@ int close_soloader(int fd);
 
 int fclose_soloader(FILE *f);
 
+int fseek_so(FILE *stream, int off, int whence);
+
 int closedir_soloader(DIR *dir);
 
 int fcntl_soloader(int fd, int cmd, ...);

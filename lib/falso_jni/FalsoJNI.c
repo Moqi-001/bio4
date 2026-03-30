@@ -1969,9 +1969,9 @@ void jni_init() {
     _jni->SetFloatArrayRegion = SetFloatArrayRegion;
     _jni->SetDoubleArrayRegion = SetDoubleArrayRegion;
     _jni->RegisterNatives = RegisterNatives;
-    _jni->UnregisterNatives = UnregisterNatives;
-    _jni->MonitorEnter = MonitorEnter;
-    _jni->MonitorExit = MonitorExit;
+    _jni->UnregisterNatives = UnregisterNatives;//864
+    _jni->MonitorEnter = MonitorEnter;//868
+    _jni->MonitorExit = MonitorExit;//872
     _jni->GetJavaVM = GetJavaVM;//876
     _jni->GetStringRegion = GetStringRegion;//880
     _jni->GetStringUTFRegion = GetStringUTFRegion;//884

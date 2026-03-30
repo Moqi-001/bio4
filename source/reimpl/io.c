@@ -55,6 +55,13 @@ FILE *fopen_soloader(const char *filename, const char *mode) {
     return ret;
 }
 
+int fseek_so(FILE *stream, int off, int whence)
+{
+   int i=fseek(stream,off,whence);
+   debugPrintf("fseek(%p,%d,%d)",stream,off,whence);
+   return i;
+}
+
 int dup_soloader(int fd) {
     debugPrintf("dup_soloader:%d", fd);
     return fd;

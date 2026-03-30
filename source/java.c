@@ -5,6 +5,10 @@
 #include <dirent.h>
 #include <malloc.h>
 #include <psp2/kernel/threadmgr.h>
+
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
 /*
  * JNI Methods
 */
@@ -76,14 +80,14 @@ jint isUseRecord(jmethodID id, va_list args)
     return 0;
 }
 
-float Depth=0;
+float Depth = 0;
 jfloat stereoGetDepth(jmethodID id, va_list args)
 {
     debugPrintf("stereoGetDepth()");
-    if(Depth==1)
-       Depth=0;
-    else 
-      Depth=1;
+    if (Depth == 1)
+        Depth = 0;
+    else
+        Depth = 1;
     return Depth;
 }
 
@@ -165,7 +169,8 @@ void jniTrackerAssignAttribute(jmethodID id, va_list args)
     debugPrintf("jniTrackerAssignAttribute(%s)", value);
 }
 
-typedef struct {
+typedef struct
+{
     int i;
     jstring str;
     int UserPtr;
@@ -182,7 +187,7 @@ jobject MyHttp_constructor(jmethodID id, va_list args)
     return (jobject)&httpObj;
 }
 
-int code=0;
+int code = 0;
 
 jint MyHttp_obj_init(jmethodID id, va_list args)
 {
@@ -191,16 +196,17 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
     int REQUEST_OK = 0;
 
     httpObj.str = va_arg(args, jstring); // boot_from=1760app/1.0.0/top/topUrlInformation
-    int i1 = va_arg(args, int); // 1
-    int i2 = va_arg(args, int); // 0
+    int i1 = va_arg(args, int);          // 1
+    int i2 = va_arg(args, int);          // 0
 
     // 这个值要存起来, 实际通过 init 函数传递给了 k.kw
     httpObj.kw = va_arg(args, int); // 0
-    
+
     debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
 
     // 判定 URL 是否以 "http" 开头
-    if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0) {
+    if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0)
+    {
         // 正常 Java 层代码返回的 NOT_HTTP_URL
         return REQUEST_OK;
     }
@@ -219,7 +225,8 @@ jint MyHttp_obj_setUserPtr(jmethodID id, va_list args)
     return 0;
 }
 
-typedef struct {
+typedef struct
+{
     int arg1;
     int arg2;
     int arg3;
@@ -229,10 +236,10 @@ typedef struct {
     int i;
 } ThreadArgs;
 
-SceUID thread_id=-1;
+SceUID thread_id = -1;
 jint MyHttp_obj_connect(jmethodID id, va_list args)
 {
-    
+
     // Java 层正确处理返回 0
     return 0;
 }
@@ -265,7 +272,7 @@ jint setPropertycv(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
     const char *value = va_arg(args, char *);
-    debugPrintf("setPropertycv(%d,%s)",i, value);
+    debugPrintf("setPropertycv(%d,%s)", i, value);
     return 0;
 }
 
@@ -284,7 +291,7 @@ jobject getText(jmethodID id, va_list args)
 jint getWidth(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("getWidth(%s)",value);
+    debugPrintf("getWidth(%s)", value);
     return strlen(value);
 }
 
@@ -320,35 +327,35 @@ jobject getImsi(jmethodID id, va_list args)
 jint setProgress(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
-    debugPrintf("setProgress(%d)",i);
+    debugPrintf("setProgress(%d)", i);
     return 0;
 }
 
 jobject drawStringEx(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("drawStringEx(%s)",value);
+    debugPrintf("drawStringEx(%s)", value);
     return NULL;
 }
 
 jobject drawString(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("drawString(%s)",value);
+    debugPrintf("drawString(%s)", value);
     return NULL;
 }
 
 jint getHeightEx(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("getHeightEx(%s)",value);
+    debugPrintf("getHeightEx(%s)", value);
     return 1;
 }
 
 void setMessage(jmethodID id, va_list args)
 {
     const char *value = va_arg(args, char *);
-    debugPrintf("setMessage(%s)",value);
+    debugPrintf("setMessage(%s)", value);
 }
 
 jint playVibrateTimer(jmethodID id, va_list args)
@@ -357,47 +364,46 @@ jint playVibrateTimer(jmethodID id, va_list args)
     return 0;
 }
 
-int downloadApplicationNum=0;
+int downloadApplicationNum = 0;
 jobject getDownloadApplicationTypeInfoFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
     int i2 = va_arg(args, int);
-    debugPrintf("getDownloadApplicationTypeInfoFromIndex(%d,%d)",i,i2);
-    if(i>=downloadApplicationNum)
+    debugPrintf("getDownloadApplicationTypeInfoFromIndex(%d,%d)", i, i2);
+    if (i >= downloadApplicationNum)
     {
         return "";
     }
-    switch (i2) 
+    switch (i2)
     {
-        case 0:
-          return "1760";
-        case 1:
-          return "DevilMayCry4";
-        case 2:
-          return "CAPCOM";
-        default:
-          return "";
-     
-     }
+    case 0:
+        return "1760";
+    case 1:
+        return "DevilMayCry4";
+    case 2:
+        return "CAPCOM";
+    default:
+        return "";
+    }
     return "";
 }
 
-int uninstallApplicationNum=0;
+int uninstallApplicationNum = 0;
 jobject getUninstallApplicationTypeInfoFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
     int i2 = va_arg(args, int);
-    debugPrintf("getUninstallApplicationTypeInfoFromIndex(%d,%d)",i,i2);
-    if(i>=uninstallApplicationNum)
+    debugPrintf("getUninstallApplicationTypeInfoFromIndex(%d,%d)", i, i2);
+    if (i >= uninstallApplicationNum)
     {
         return "";
     }
-    switch (i2) 
+    switch (i2)
     {
-        case 0:
-          return "1760";
-        default:
-          return "";
+    case 0:
+        return "1760";
+    default:
+        return "";
     }
     return "";
 }
@@ -420,52 +426,52 @@ jint applicationDownloadGetNetowrkPauseStatus(jmethodID id, va_list args)
     return 0;
 }
 
-int index=0;
+int index = 0;
 jint getDownloadApplicationInfoFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
-    debugPrintf("getDownloadApplicationInfoFromIndex(%d)",i);
+    debugPrintf("getDownloadApplicationInfoFromIndex(%d)", i);
     return -1;
 
-    if(i<downloadApplicationNum)
+    if (i < downloadApplicationNum)
     {
-        if(index>=100)
+        if (index >= 100)
         {
-          //Install(&jni,0,"/runtime/","/RuntimeApps/","/RuntimeApps/","","","");
-          index=0;
+            //Install(&jni,0,"/runtime/","/RuntimeApps/","/RuntimeApps/","","","");
+            index = 0;
         }
-        else 
+        else
         {
-           index+=20;
+            index += 20;
         }
-        
+
         return index;
     }
-    
+
     return -1;
 }
 
 jint getDownloadApplicationBodySizeFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
-    debugPrintf("getDownloadApplicationBodySizeFromIndex(%d)",i);
-    if(i<downloadApplicationNum)
+    debugPrintf("getDownloadApplicationBodySizeFromIndex(%d)", i);
+    if (i < downloadApplicationNum)
     {
         return 100;
     }
-    
+
     return -1;
 }
 
 jint getDownloadApplicationSizeFromIndex(jmethodID id, va_list args)
 {
     int i = va_arg(args, int);
-    debugPrintf("getDownloadApplicationSizeFromIndex(%d)",i);
-    if(i<downloadApplicationNum)
+    debugPrintf("getDownloadApplicationSizeFromIndex(%d)", i);
+    if (i < downloadApplicationNum)
     {
         return index;
     }
-    
+
     return -1;
 }
 
@@ -474,9 +480,71 @@ jint return0(jmethodID id, va_list args)
     debugPrintf("return0()");
     return 0;
 }
+static char* fopen_path_real;
+jint calcInfo(jmethodID id, va_list args)
+{
+    char* value = va_arg(args, char *);
+    debugPrintf("calcInfo(%s)", value);
+    fopen_path_real=malloc(512);
+    
+    //char fopen_path_real[512];
+    memset(fopen_path_real, 0, 512);
+    sceClibSnprintf(fopen_path_real, 512, "ux0:data/Bio4/%s.png", value);
+    return 1;
+}
+
+jlong getStartOffset(jmethodID id, va_list args)
+{
+    debugPrintf("getStartOffset()");
+    return 0;
+}
+
+off_t get_file_size(char *file_name)
+{
+    int ret;
+    int fd = -1;
+    struct stat file_stat;
+
+    fd = open(file_name, O_RDONLY); // 打开文件
+    if (fd == -1)
+    {
+        debugPrintf("Open file %s failed : %s\n", file_name, strerror(errno));
+        return -1;
+    }
+    ret = fstat(fd, &file_stat); // 获取文件状态
+    if (ret == -1)
+    {
+        debugPrintf("Get file %s stat failed:%s\n", file_name, strerror(errno));
+        close(fd);
+        return -1;
+    }
+    close(fd);
+    return file_stat.st_size;
+}
+
+
+jlong getLength(jmethodID id, va_list args)
+{
+    off_t l=get_file_size(fopen_path_real);
+    debugPrintf("get_file_size(%s) return:%ld",fopen_path_real,l);
+    return l;
+}
+
+char *downloadDataPath = DATA_PATH;
+
+jobject getdownloadDataPath(jmethodID id, va_list args)
+{
+    return downloadDataPath;
+}
+
+jobject getPackagePath(jmethodID id, va_list args)
+{
+    debugPrintf("getPackagePath() return:%s",fopen_path_real);
+    return fopen_path_real;
+}
 
 NameToMethodID nameToMethodId[] = {
-    {0, "NULL", METHOD_TYPE_VOID, return0},                              
+    {0, "NULL", METHOD_TYPE_VOID, return0},
     {1, "Native_Exit", METHOD_TYPE_VOID, Native_Exit},                              // ()V
     {2, "vibrate", METHOD_TYPE_VOID, vibrate},                                      // ()V
     {3, "launchRuntime", METHOD_TYPE_VOID, launchRuntime},                          // (I)V
@@ -535,6 +603,11 @@ NameToMethodID nameToMethodId[] = {
     {50, "getDownloadApplicationSizeFromIndex", METHOD_TYPE_INT, getDownloadApplicationSizeFromIndex},
     {51, "getUninstallApplicationTypeInfoFromIndex", METHOD_TYPE_INT, getUninstallApplicationTypeInfoFromIndex},
     {52, "currentTimeMillis", METHOD_TYPE_INT, NULL},
+    {53, "getdownloadDataPath", METHOD_TYPE_INT, getdownloadDataPath},
+    {54, "calcInfo", METHOD_TYPE_INT, calcInfo},
+    {55, "getPackagePath", METHOD_TYPE_INT, getPackagePath},
+    {56, "getStartOffset", METHOD_TYPE_INT, getStartOffset},
+    {57, "getLength", METHOD_TYPE_INT, getLength},
 };
 
 MethodsBoolean methodsBoolean[] = {};
@@ -549,6 +622,8 @@ MethodsFloat methodsFloat[] = {
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
     {52, GetCurrentTime},
+    {57, getLength},
+    {56, getStartOffset},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};
