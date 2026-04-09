@@ -57,8 +57,10 @@ FILE *fopen_soloader(const char *filename, const char *mode) {
 
 int fseek_so(FILE *stream, int off, int whence)
 {
+   //int i=sceLibcBridge_fseek(stream,off,whence);
+   debugPrintf("fseek0(%p,%d,%d)",stream,off,whence);
    int i=fseek(stream,off,whence);
-   debugPrintf("fseek(%p,%d,%d)",stream,off,whence);
+   debugPrintf("fseek1(%p,%d,%d) return %d",stream,off,whence,i);
    return i;
 }
 

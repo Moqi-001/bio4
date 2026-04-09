@@ -480,23 +480,30 @@ jint return0(jmethodID id, va_list args)
     debugPrintf("return0()");
     return 0;
 }
-static char* fopen_path_real;
+char fopen_path_real[512];
+int len = 512;
 jint calcInfo(jmethodID id, va_list args)
 {
-    char* value = va_arg(args, char *);
-    debugPrintf("calcInfo(%s)", value);
-    fopen_path_real=malloc(512);
+    char *value = va_arg(args, char *);
     
-    //char fopen_path_real[512];
-    memset(fopen_path_real, 0, 512);
-    sceClibSnprintf(fopen_path_real, 512, "ux0:data/Bio4/%s.png", value);
-    return 1;
+    memset(fopen_path_real, 0, len);
+    sceClibSnprintf(fopen_path_real, len, "ux0:data/Bio4/%s.png", value);
+    if (access(fopen_path_real, F_OK) == 0)
+    {
+        debugPrintf("calcInfo(%s) 1", value);
+        return 1;
+    }
+    else
+    {
+        debugPrintf("calcInfo(%s) 0", value);
+        return 0;
+    }
 }
 
 jlong getStartOffset(jmethodID id, va_list args)
 {
     debugPrintf("getStartOffset()");
-    return 0;
+    return 0L;
 }
 
 off_t get_file_size(char *file_name)
@@ -522,12 +529,11 @@ off_t get_file_size(char *file_name)
     return file_stat.st_size;
 }
 
-
 jlong getLength(jmethodID id, va_list args)
 {
-    off_t l=get_file_size(fopen_path_real);
-    debugPrintf("get_file_size(%s) return:%ld",fopen_path_real,l);
-    return l;
+    off_t l = get_file_size(fopen_path_real);
+    debugPrintf("get_file_size(%s) return:%ld", fopen_path_real, l);
+    return (jlong)l;
 }
 
 char *downloadDataPath = DATA_PATH;
@@ -539,7 +545,7 @@ jobject getdownloadDataPath(jmethodID id, va_list args)
 
 jobject getPackagePath(jmethodID id, va_list args)
 {
-    debugPrintf("getPackagePath() return:%s",fopen_path_real);
+    debugPrintf("getPackagePath() return:%s", fopen_path_real);
     return fopen_path_real;
 }
 
