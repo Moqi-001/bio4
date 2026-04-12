@@ -1270,9 +1270,9 @@ const char* GetStringUTFChars(JNIEnv* env, jstring string, jboolean* isCopy) {
 
 void ReleaseStringUTFChars(JNIEnv* env, jstring string, char* chars) {
     fjni_logv_dbg("[JNI] ReleaseStringUTFChars(env, 0x%x, \"%s\")", (int)string, chars);
-    /*if (chars) {
+    if (chars) {
         free(chars);
-    }*/
+    }
 }
 
 jsize GetArrayLength(JNIEnv* env, jarray array) {

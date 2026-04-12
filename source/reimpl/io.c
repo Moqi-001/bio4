@@ -44,35 +44,20 @@ FILE *fopen_soloader(const char *filename, const char *mode)
 {
     debugPrintf("fopen_soloader:%s", filename);
 
-    char* newName = strdup(filename);
-    // 清洗一遍数据, 保障只有合法字符
-    if (newName) {
-        for (int i = 0; newName[i]; i++) {
-            char c = newName[i];
-            if (!((c >= 'a' && c <= 'z') ||
-                  (c >= 'A' && c <= 'Z') ||
-                  (c >= '0' && c <= '9') ||
-                  c == '.' || c == '/' || c == '_' || c == ':')) {
-                newName[i] = '\0';  // 遇到非法字符直接截断
-                break;
-            }
-        }
-    }
-
     // TODO: 判断文件名称, 帮他引导到 DATA_PATH/filename 下去 open
 #ifdef USE_SCELIBC_IO
     FILE *ret = sceLibcBridge_fopen(filename, mode);
 #else
-    FILE *ret = fopen(newName, mode);
+    FILE *ret = fopen(filename, mode);
 #endif
 
     if (ret)
     {
-        l_debug("fopen(%s, %s): %p", newName, mode, ret);
+        l_debug("fopen(%s, %s): %p", filename, mode, ret);
     }
     else
     {
-        l_warn("error fopen(%s, %s): %p", newName, mode, ret);
+        l_warn("error fopen(%s, %s): %p", filename, mode, ret);
     }
 
     return ret;
