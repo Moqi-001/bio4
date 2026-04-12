@@ -480,22 +480,26 @@ jint return0(jmethodID id, va_list args)
     debugPrintf("return0()");
     return 0;
 }
-char fopen_path_real[512];
-int len = 512;
-jint calcInfo(jmethodID id, va_list args)
+char *fopen_path_real;
+
+jboolean calcInfo(jmethodID id, va_list args)
 {
+    if (fopen_path_real != NULL)
+        free(fopen_path_real);
     char *value = va_arg(args, char *);
-    
-    memset(fopen_path_real, 0, len);
+    int len = strlen(DATA_PATH) + strlen(value) + 4;
+    fopen_path_real = malloc(len);
+    memset(fopen_path_real, '\0', len);
     sceClibSnprintf(fopen_path_real, len, "ux0:data/Bio4/%s.png", value);
+
     if (access(fopen_path_real, F_OK) == 0)
     {
-        debugPrintf("calcInfo(%s) 1", value);
+        debugPrintf("calcInfo(%s) 1", fopen_path_real);
         return 1;
     }
     else
     {
-        debugPrintf("calcInfo(%s) 0", value);
+        debugPrintf("calcInfo(%s) 0", fopen_path_real);
         return 0;
     }
 }
