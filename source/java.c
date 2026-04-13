@@ -195,22 +195,6 @@ jint MyHttp_obj_init(jmethodID id, va_list args)
     int NOT_HTTP_URL = -17;
     int REQUEST_OK = 0;
 
-    httpObj.str = va_arg(args, jstring); // boot_from=1760app/1.0.0/top/topUrlInformation
-    int i1 = va_arg(args, int);          // 1
-    int i2 = va_arg(args, int);          // 0
-
-    // 这个值要存起来, 实际通过 init 函数传递给了 k.kw
-    httpObj.kw = va_arg(args, int); // 0
-
-    debugPrintf("MyHttp_obj_init(%s, %d, %d, %d)", httpObj.str, i1, i2, httpObj.kw);
-
-    // 判定 URL 是否以 "http" 开头
-    if (httpObj.str == NULL || strncmp(httpObj.str, "http", 4) != 0)
-    {
-        // 正常 Java 层代码返回的 NOT_HTTP_URL
-        return REQUEST_OK;
-    }
-
     // 现在服务器不通, 正常应该返回 NOT_HTTP_URL
     return REQUEST_OK;
 }
@@ -480,28 +464,38 @@ jint return0(jmethodID id, va_list args)
     debugPrintf("return0()");
     return 0;
 }
-char *fopen_path_real;
+static char *fopen_path_real;
 
 jboolean calcInfo(jmethodID id, va_list args)
 {
     if (fopen_path_real != NULL)
         free(fopen_path_real);
     char *value = va_arg(args, char *);
+    debugPrintf("calcInfo(%s)", value);
+
     int len = strlen(DATA_PATH) + strlen(value) + 4;
     fopen_path_real = malloc(len);
     memset(fopen_path_real, '\0', len);
-    sceClibSnprintf(fopen_path_real, len, "ux0:data/Bio4/%s.png", value);
+    if (strcmp(value, "common.h2z") == 0)
+    {
+        fopen_path_real = strdup("ux0:data/Bio4/common.h2z.png");
+    }
+    else
+    {
+        sceClibSnprintf(fopen_path_real, len, "ux0:data/Bio4/%s.png", value);
+    }
 
     if (access(fopen_path_real, F_OK) == 0)
     {
-        debugPrintf("calcInfo(%s) 1", fopen_path_real);
+        debugPrintf("calcInfo(%s) return 1", fopen_path_real);
         return 1;
     }
     else
     {
-        debugPrintf("calcInfo(%s) 0", fopen_path_real);
+        debugPrintf("calcInfo(%s) return 0", fopen_path_real);
         return 0;
     }
+    free(value);
 }
 
 jlong getStartOffset(jmethodID id, va_list args)
@@ -512,9 +506,30 @@ jlong getStartOffset(jmethodID id, va_list args)
 
 off_t get_file_size(char *file_name)
 {
+
     int ret;
     int fd = -1;
     struct stat file_stat;
+
+    // 3. 调用 stat 函数
+    // 第一个参数是文件路径
+    // 第二个参数是 stat 结构体的地址，用 '&' 取地址
+    // stat 函数会将文件信息填充到 file_stat 变量中
+    int result = stat(file_name, &file_stat);
+
+    // 4. 检查 stat 函数的返回值
+    if (result == -1)
+    {
+        // 如果返回 -1，表示出错了
+        // perror 会根据全局变量 errno 打印出具体的错误信息
+        debugPrintf("ersss");
+        return -1;
+    }
+    else
+    {
+        debugPrintf("rr:%d", file_stat.st_size);
+        return file_stat.st_size;
+    }
 
     fd = open(file_name, O_RDONLY); // 打开文件
     if (fd == -1)
@@ -551,6 +566,37 @@ jobject getPackagePath(jmethodID id, va_list args)
 {
     debugPrintf("getPackagePath() return:%s", fopen_path_real);
     return fopen_path_real;
+}
+
+jint SetupFontSize(jmethodID id, va_list args)
+{
+    return 12;
+}
+
+jobject getFilePath(jmethodID id, va_list args)
+{
+    debugPrintf("getFilePath() return:%s", DATA_PATH);
+    return DATA_PATH;
+}
+
+char m_TextParam[20];
+jobject GetParam(jmethodID id, va_list args)
+{
+    debugPrintf("m_TextParam()");
+    memset(m_TextParam,0,20);
+    return m_TextParam;
+}
+
+jobject CreateTextBitmap(jmethodID id, va_list args)
+{
+    char* i_str = va_arg(args, char *);
+    int i_nMaxWid = va_arg(args, int);
+    int i_nMaxHei = va_arg(args, int);
+
+    debugPrintf("CreateTextBitmap(%s,%d,%d)",i_str,i_nMaxWid,i_nMaxHei);
+    char* a_bufByte=malloc(i_nMaxHei*i_nMaxWid);
+    memset(a_bufByte,0,i_nMaxHei*i_nMaxWid);
+    return a_bufByte;
 }
 
 NameToMethodID nameToMethodId[] = {
@@ -618,9 +664,17 @@ NameToMethodID nameToMethodId[] = {
     {55, "getPackagePath", METHOD_TYPE_INT, getPackagePath},
     {56, "getStartOffset", METHOD_TYPE_INT, getStartOffset},
     {57, "getLength", METHOD_TYPE_INT, getLength},
+    {58, "jp/co/sharp/android/stereo3d/Parallax/<init>", METHOD_TYPE_INT, return0},
+    {59, "getDpyFormat", METHOD_TYPE_INT, return0},
+    {60, "SetupFontSize", METHOD_TYPE_INT, SetupFontSize},
+    {61, "getFilePath", METHOD_TYPE_INT, getFilePath},
+    {62, "GetParam", METHOD_TYPE_INT, GetParam},
+    {63, "CreateTextBitmap", METHOD_TYPE_INT, CreateTextBitmap},
 };
 
-MethodsBoolean methodsBoolean[] = {};
+MethodsBoolean methodsBoolean[] = {
+    {54, calcInfo},
+};
 MethodsByte methodsByte[] = {};
 MethodsChar methodsChar[] = {};
 MethodsDouble methodsDouble[] = {
@@ -632,8 +686,8 @@ MethodsFloat methodsFloat[] = {
 MethodsInt methodsInt[] = {};
 MethodsLong methodsLong[] = {
     {52, GetCurrentTime},
-    {57, getLength},
     {56, getStartOffset},
+    {57, getLength},
 };
 MethodsObject methodsObject[] = {};
 MethodsShort methodsShort[] = {};

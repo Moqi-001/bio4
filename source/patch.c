@@ -21,9 +21,15 @@ int bootstrap_start_soloader(int argc, char *argv[], char *envp[])
     return 0;
 }
 
+char* _ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z()
+{
+    debugPrintf("_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z");
+    return strdup(getPackagePath(0,0));
+}
+
 void so_patch(void) {
     // Sample hook
-    // hook_addr((uintptr_t)so_symbol(&so_mod, "kdExit"), (uintptr_t)&kdExit);
+    hook_addr((uintptr_t)so_symbol(&so_mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z"), (uintptr_t)&_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z);
 
     // int * UserConfirm = (int *) so_symbol(&so_mod, "_UserConfirm");
     // * UserConfirm = 1;
