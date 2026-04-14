@@ -579,23 +579,41 @@ jobject getFilePath(jmethodID id, va_list args)
     return DATA_PATH;
 }
 
-char m_TextParam[20];
+jbyteArray m_TextParam;
+char m_TextParamData[20];
 jobject GetParam(jmethodID id, va_list args)
 {
     debugPrintf("m_TextParam()");
-    memset(m_TextParam,0,20);
+    if (m_TextParam == NULL)
+    {
+        int num = 20;
+        m_TextParam = NewByteArray(&jni, num);
+        memset(m_TextParamData, 4, 20);
+        SetByteArrayRegion(&jni, m_TextParam, 0, num, m_TextParamData);
+
+    }
     return m_TextParam;
 }
 
+jbyteArray a_bufByte;
+char* a_bufByteData;
+
 jobject CreateTextBitmap(jmethodID id, va_list args)
 {
-    char* i_str = va_arg(args, char *);
+    char *i_str = va_arg(args, char *);
     int i_nMaxWid = va_arg(args, int);
     int i_nMaxHei = va_arg(args, int);
 
-    debugPrintf("CreateTextBitmap(%s,%d,%d)",i_str,i_nMaxWid,i_nMaxHei);
-    char* a_bufByte=malloc(i_nMaxHei*i_nMaxWid);
-    memset(a_bufByte,0,i_nMaxHei*i_nMaxWid);
+    debugPrintf("CreateTextBitmap(%s,%d,%d)", i_str, i_nMaxWid, i_nMaxHei);
+    if (a_bufByte == NULL)
+    {
+        int num = i_nMaxHei * i_nMaxWid;
+        a_bufByte = NewByteArray(&jni, num);
+        a_bufByteData= malloc(num);
+        memset(a_bufByteData, 2, 20);
+        SetByteArrayRegion(&jni, a_bufByte, 0, num, a_bufByteData);
+        free(a_bufByteData);
+    }
     return a_bufByte;
 }
 
