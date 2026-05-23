@@ -1,0 +1,34 @@
+# 基础代码风格
+BasedOnStyle: Google
+
+# 缩进设置
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never                    # Never-空格, Always-Tab, ForIndentation-仅缩进用Tab
+
+# 花括号风格
+BreakBeforeBraces: Attach        # Attach-同一行, Linux-函数另起, Allman-总是另起
+SpacesInContainerLiterals: false # 花括号内不加空格
+
+# 对齐配置
+AlignConsecutiveMacros: true       # 连续宏定义对齐
+AlignConsecutiveDeclarations: true # 连续声明对齐
+AlignConsecutiveAssignments: true  # 连续赋值对齐
+AlignArrayOfStructures: Left       # 结构体数组初始化对齐
+AlignTrailingComments: true        # 尾随注释对齐
+
+# 格式限制
+ColumnLimit: 0                   # 0-无行宽限制
+MaxEmptyLinesToKeep: 1           # 最大连续空行
+
+# 符号和空格
+PointerAlignment: Right              # Left-指针靠左, Right-指针靠右
+SpaceBeforeParens: ControlStatements # 括号前空格: ControlStatements-仅控制语句
+
+# Include文件处理
+SortIncludes: CaseInsensitive    # 包含文件排序
+IncludeBlocks: Preserve          # 包含块保持原样
+
+# Switch语句缩进
+IndentCaseLabels: true           # case标签缩进  
+IndentCaseBlocks: false          # case内容块缩进

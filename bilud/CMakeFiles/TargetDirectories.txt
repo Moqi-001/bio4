@@ -1,0 +1,10 @@
+/home/admin/SH/bio4/bilud/CMakeFiles/Bio4.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/Bio4-velf.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/eboot.bin-self.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/Bio4.vpk-vpk.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/send.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/send_kvdb.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/dump.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/reboot.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/edit_cache.dir
+/home/admin/SH/bio4/bilud/CMakeFiles/rebuild_cache.dir

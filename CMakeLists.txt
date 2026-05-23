@@ -11,8 +11,8 @@ project(Bio4 C CXX)
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 # Vita application configuration
-set(VITA_APP_NAME "Bio4")
-set(VITA_TITLEID "BIO400000")
+set(VITA_APP_NAME "Resident Evil 4: Mobile Edition")
+set(VITA_TITLEID "BIO4AF000")
 set(VITA_VPKNAME "Bio4")
 set(VITA_VERSION "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
@@ -23,101 +23,75 @@ set(PARSECOREPATH "$ENV{PARSECOREPATH}" CACHE STRING "vita-parse-core main.py")
 
 # Game-specific definitions
 set(DATA_PATH "ux0:data/Bio4/" CACHE STRING "Path to data (with trailing /)")
-set(SO_PATH "${DATA_PATH}libbio4af.so" CACHE STRING "Path to .so")
-set(SO_PATH_0 "${DATA_PATH}libmc_eruption_for_android_jni.so" CACHE STRING "Path to .so")
-
-add_definitions(-DDATA_PATH="${DATA_PATH}" -DSO_PATH="${SO_PATH}" -DSO_PATH_0="${SO_PATH_0}")
-
-option(USE_SCELIBC_IO "Use SceLibcBridge for IO and some other std functions" OFF)
-if (USE_SCELIBC_IO)
-  add_definitions(-DUSE_SCELIBC_IO)
-endif()
-
-add_definitions(-DDEBUG_FILE)
-
-set(SHADER_FORMAT "CG" CACHE STRING "Preferred shader format (one of 'GLSL', 'CG', 'GXP')")
-if (${SHADER_FORMAT} STREQUAL "GLSL")
-  add_definitions(-DUSE_GLSL_SHADERS)
-elseif (${SHADER_FORMAT} STREQUAL "CG")
-  add_definitions(-DUSE_CG_SHADERS)
-elseif (${SHADER_FORMAT} STREQUAL "GXP")
-  add_definitions(-DUSE_GXP_SHADERS)
-else()
-  message(FATAL_ERROR "SHADER_FORMAT option can only be one of: 'GLSL', 'CG', 'GXP'")
-endif()
-
-set(valid_dump_formats GLSL CG)
-option(DUMP_COMPILED_SHADERS "When using GLSL or CG shader format, cache compiled shaders on disk" ON)
-if (DUMP_COMPILED_SHADERS)
-  if (SHADER_FORMAT IN_LIST valid_dump_formats)
-    add_definitions(-DDUMP_COMPILED_SHADERS)
-  else()
-    message(WARNING "DUMP_COMPILED_SHADERS has no effect for the chosen shader format ${SHADER_FORMAT}")
-  endif()
-endif()
+set(LOG_PATH "${DATA_PATH}log.txt" CACHE STRING "Path to log.txt")
+add_definitions(-DDATA_PATH="${DATA_PATH}" -DLOG_PATH="${LOG_PATH}")
 
 # Unique debug definition for loader's logging to not interfere with anything
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #add_definitions(-DDEBUG_SOLOADER)
-  # Uncomment this for verbose FalsoJNI logging:
-  #add_definitions(-DFALSOJNI_DEBUGLEVEL=0)
+  add_definitions(-DDEBUG_SOLOADER)
+  #add_definitions(-DDEBUG_LOGFILE) # 日志写入文件
 endif()
 
 # makes sincos, sincosf, etc. visible
 add_definitions(-D_GNU_SOURCE -D__POSIX_VISIBLE=999999)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -O3 -g -ffast-math -mfloat-abi=softfp -Wno-deprecated")
-set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=gnu++20 -Wno-write-strings -Wno-psabi")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-q -mfloat-abi=softfp -std=gnu11 -Wno-deprecated")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-q -mfloat-abi=softfp -std=gnu++20 -Wno-write-strings -Wno-psabi")
 
-
-add_executable(${CMAKE_PROJECT_NAME}
-  source/main.c
-  source/dynlib.c
-  source/java.c
-  source/patch.c
-  source/init.c
-
-  source/reimpl/android/atomic.c
-  source/reimpl/android/SharedBuffer.c
-  source/reimpl/android/String8.c
-  source/reimpl/libGgee/ggee.c
-  source/reimpl/libKD/kd.c
-  source/reimpl/libLD/ld.c
-  source/reimpl/libLD/ld_mem.c
-  source/reimpl/bits/_ctype.c
-  source/reimpl/egl.c
-  source/reimpl/errno.c
-  source/reimpl/io.c
-  source/reimpl/log.c
-  source/reimpl/mem.c
-  source/reimpl/pthr.c
-  source/reimpl/sys.c
-  source/reimpl/time64.c
-  source/reimpl/controls.c
-  source/reimpl/asset_manager.cpp
-
-  source/utils/dialog.c
-  source/utils/glutil.c
-  source/utils/logger.c
-  source/utils/settings.c
-  source/utils/utils.c
-
-  lib/falso_jni/FalsoJNI.c
-  lib/falso_jni/FalsoJNI_ImplBridge.c
-  lib/falso_jni/FalsoJNI_Logger.c
-  lib/so_util/so_util.c
-  lib/fios/fios.c
-  lib/sha1/sha1.c
-  lib/md5/md5.c
-)
-
-if (USE_SCELIBC_IO)
-  add_subdirectory(lib/libc_bridge)
-  add_dependencies(${CMAKE_PROJECT_NAME} SceLibcBridge)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O1 -g3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O1 -g3")
+else ()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -g0 -ffast-math")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g0 -ffast-math")
 endif()
 
+file(GLOB SO_COMMON_SRC deps/so_common/*.c)
+file(GLOB SO_LINKER_SRC deps/so_linker/*.c)
+file(GLOB SO_JNI_SRC    deps/so_jni/*.c)
+
+add_executable(${CMAKE_PROJECT_NAME}
+  ${SO_COMMON_SRC}
+  ${SO_LINKER_SRC}
+  ${SO_JNI_SRC}
+
+  deps/so_libs/reimpl/android/log.c
+  deps/so_libs/reimpl/bits/_ctype.c
+  deps/so_libs/reimpl/EGL.c
+  deps/so_libs/reimpl/errno.c
+  deps/so_libs/reimpl/io.c
+  deps/so_libs/reimpl/mem.c
+  deps/so_libs/reimpl/pthr.c
+  deps/so_libs/reimpl/sys.c
+  deps/so_libs/libc.c
+  deps/so_libs/libstdcpp.c
+  deps/so_libs/libm.c
+  deps/so_libs/libEGL.c
+  deps/so_libs/libGLESv1_CM.c
+  deps/so_libs/liblog.c
+  deps/so_libs/libdl.c
+  deps/so_libs/libcutils.c
+  deps/so_libs/libdvm.c
+
+  deps/sha1/sha1.c
+
+  source/utils/dialog.c
+  source/utils/utils.c
+
+  source/java/lang/System.c
+  source/java/AssetFileInfo.c
+  source/java/Bio4PreActivity.c
+  source/java/LGUArmManager.c
+
+  source/java.c
+  source/loader.c
+  source/main.c
+  source/patch.c
+)
+
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
-  PUBLIC ${CMAKE_SOURCE_DIR}/lib
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
+  PUBLIC ${CMAKE_SOURCE_DIR}/deps
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}
@@ -134,15 +108,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   SceShaccCg_stub
   z
   m
-  png16
-  ScePgf_stub
   mathneon
   kubridge_stub
-  ${CMAKE_SOURCE_DIR}/lib_stub/vitaSQLite3.a
-  # ${CMAKE_BINARY_DIR}/lib/libc_bridge/stubs/libSceLibcBridge_stub.a
-  ${CMAKE_SOURCE_DIR}/lib_stub/libSceLibcBridge_stub.a
-  # SceLibcBridge_stub
   SceHid_stub
+  SceCtrl_stub
   SceTouch_stub
   SceMotion_stub
   SceAppMgr_stub
@@ -152,11 +121,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   SceCommonDialog_stub
   SceDisplay_stub
   SceKernelDmacMgr_stub
-  SceFios2_stub
-  SceCtrl_stub
   SceGxm_stub
   ScePower_stub
-  SceTouch_stub
   SceVshBridge_stub
 )
 
@@ -164,13 +130,13 @@ vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)
 vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
   VERSION ${VITA_VERSION}
   NAME ${VITA_APP_NAME}
-  FILE ${CMAKE_SOURCE_DIR}/extras/cpuinfo cpuinfo
-  ${CMAKE_SOURCE_DIR}/extras/meminfo meminfo
-  ${CMAKE_SOURCE_DIR}/extras/livearea/icon0.png sce_sys/icon0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/pic0.png sce_sys/pic0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/startup.png sce_sys/livearea/contents/startup.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/bg0.png sce_sys/livearea/contents/bg0.png
-  ${CMAKE_SOURCE_DIR}/extras/livearea/template.xml sce_sys/livearea/contents/template.xml
+  FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/icon0.png sce_sys/icon0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/pic0.png sce_sys/pic0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/startup.png sce_sys/livearea/contents/startup.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/bg0.png sce_sys/livearea/contents/bg0.png
+  FILE ${CMAKE_SOURCE_DIR}/resources/livearea/template.xml sce_sys/livearea/contents/template.xml
 )
 
 add_custom_target(send
@@ -186,13 +152,4 @@ add_custom_target(send_kvdb
   COMMAND curl -T eboot.bin ftp://${PSVITAIP}:1337/ux0:/app/${VITA_TITLEID}/
   COMMAND echo launch ux0:/app/${VITA_TITLEID}/eboot.bin | nc ${PSVITAIP} 1338
   DEPENDS ${VITA_VPKNAME}.vpk-vpk
-)
-
-add_custom_target(dump
-  COMMAND ${CMAKE_SOURCE_DIR}/extras/scripts/get_dump.sh ${PSVITAIP}
-  COMMAND python3 ${PARSECOREPATH} coredump ${CMAKE_PROJECT_NAME}
-)
-
-add_custom_target(reboot
-  COMMAND echo reboot | nc ${PSVITAIP} 1338
 )

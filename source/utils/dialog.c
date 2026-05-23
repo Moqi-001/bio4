@@ -20,16 +20,16 @@
 static uint16_t ime_title_utf16[SCE_IME_DIALOG_MAX_TITLE_LENGTH];
 static uint16_t ime_initial_text_utf16[SCE_IME_DIALOG_MAX_TEXT_LENGTH];
 static uint16_t ime_input_text_utf16[SCE_IME_DIALOG_MAX_TEXT_LENGTH + 1];
-static uint8_t ime_input_text_utf8[SCE_IME_DIALOG_MAX_TEXT_LENGTH + 1];
+static uint8_t  ime_input_text_utf8[SCE_IME_DIALOG_MAX_TEXT_LENGTH + 1];
 
 void _utf16_to_utf8(const uint16_t *src, uint8_t *dst) {
     for (int i = 0; src[i]; i++) {
         if ((src[i] & 0xFF80) == 0) {
             *(dst++) = src[i] & 0xFF;
-        } else if((src[i] & 0xF800) == 0) {
+        } else if ((src[i] & 0xF800) == 0) {
             *(dst++) = ((src[i] >> 6) & 0xFF) | 0xC0;
             *(dst++) = (src[i] & 0x3F) | 0x80;
-        } else if((src[i] & 0xFC00) == 0xD800 && (src[i + 1] & 0xFC00) == 0xDC00) {
+        } else if ((src[i] & 0xFC00) == 0xD800 && (src[i + 1] & 0xFC00) == 0xDC00) {
             *(dst++) = (((src[i] + 64) >> 8) & 0x3) | 0xF0;
             *(dst++) = (((src[i] >> 2) + 16) & 0x3F) | 0x80;
             *(dst++) = ((src[i] >> 4) & 0x30) | 0x80 | ((src[i + 1] << 2) & 0xF);
@@ -48,7 +48,7 @@ void _utf16_to_utf8(const uint16_t *src, uint8_t *dst) {
 void _utf8_to_utf16(const uint8_t *src, uint16_t *dst) {
     for (int i = 0; src[i];) {
         if ((src[i] & 0xE0) == 0xE0) {
-            *(dst++) = ((src[i]&0x0F) <<12) | ((src[i+1]&0x3F) <<6) | (src[i+2]&0x3F);
+            *(dst++) = ((src[i] & 0x0F) << 12) | ((src[i + 1] & 0x3F) << 6) | (src[i + 2] & 0x3F);
             i += 3;
         } else if ((src[i] & 0xC0) == 0xC0) {
             *(dst++) = ((src[i] & 0x1F) << 6) | (src[i + 1] & 0x3F);
@@ -75,12 +75,12 @@ int init_ime_dialog(const char *title, const char *initial_text) {
     sceImeDialogParamInit(&param);
 
     param.supportedLanguages = 0x0001FFFF;
-    param.languagesForced = SCE_TRUE;
-    param.type = SCE_IME_TYPE_BASIC_LATIN;
-    param.title = ime_title_utf16;
-    param.maxTextLength = SCE_IME_DIALOG_MAX_TEXT_LENGTH;
-    param.initialText = ime_initial_text_utf16;
-    param.inputTextBuffer = ime_input_text_utf16;
+    param.languagesForced    = SCE_TRUE;
+    param.type               = SCE_IME_TYPE_BASIC_LATIN;
+    param.title              = ime_title_utf16;
+    param.maxTextLength      = SCE_IME_DIALOG_MAX_TEXT_LENGTH;
+    param.initialText        = ime_initial_text_utf16;
+    param.inputTextBuffer    = ime_input_text_utf16;
 
     return sceImeDialogInit(&param);
 }
@@ -105,12 +105,12 @@ int init_msg_dialog(const char *msg) {
     SceMsgDialogUserMessageParam msg_param;
     sceClibMemset(&msg_param, 0, sizeof(msg_param));
     msg_param.buttonType = SCE_MSG_DIALOG_BUTTON_TYPE_OK;
-    msg_param.msg = (SceChar8 *)msg;
+    msg_param.msg        = (SceChar8 *)msg;
 
     SceMsgDialogParam param;
     sceMsgDialogParamInit(&param);
     _sceCommonDialogSetMagicNumber(&param.commonParam);
-    param.mode = SCE_MSG_DIALOG_MODE_USER_MSG;
+    param.mode         = SCE_MSG_DIALOG_MODE_USER_MSG;
     param.userMsgParam = &msg_param;
 
     return sceMsgDialogInit(&param);
@@ -125,7 +125,7 @@ int get_msg_dialog_result(void) {
 
 void fatal_error(const char *fmt, ...) {
     va_list list;
-    char string[512];
+    char    string[512];
 
     va_start(list, fmt);
     sceClibVsnprintf(string, sizeof(string), fmt, list);
@@ -137,8 +137,6 @@ void fatal_error(const char *fmt, ...) {
 
     while (!get_msg_dialog_result())
         vglSwapBuffers(GL_TRUE);
-
-    sceKernelExitProcess(0);
 
     sceKernelExitProcess(0);
     while (1);
