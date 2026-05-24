@@ -77,7 +77,7 @@ so_module *soloader_load_library(const char *soname) {
     }
     so_linker_register_module(mod);
 
-    so_logd("[LOADER] load_library success: soname='%s', load_base=%p", so_module_name(mce_mod), so_module_load_base(mce_mod));
+    so_logd("[LOADER] load_library success: soname='%s', load_base=%p", so_module_name(mod), so_module_load_base(mod));
     return mod;
 }
 

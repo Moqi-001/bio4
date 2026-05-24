@@ -55,7 +55,7 @@ static jlong getLength() {
     return m_nFileLength;
 }
 
-static so_jsymbol AssetFileInfo_symbols[] = {
+static so_jsymbol class_symbols[] = {
     // 静态变量
     SO_JSYMBOL_STATIC_FIELD("m_nFileOffset", "J", &m_nFileOffset),
     SO_JSYMBOL_STATIC_FIELD("m_nFileLength", "J", &m_nFileLength),
@@ -67,10 +67,14 @@ static so_jsymbol AssetFileInfo_symbols[] = {
     SO_JSYMBOL_STATIC_METHOD("getLength", "()J", &getLength),
 };
 
-so_jclass_meta AssetFileInfo_jclass_meta = {
+static so_jclass_meta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/AssetFileInfo",
     .super_name    = NULL,
-    .symbols       = AssetFileInfo_symbols,
-    .num_symbols   = sizeof(AssetFileInfo_symbols) / sizeof(AssetFileInfo_symbols[0]),
+    .symbols       = class_symbols,
+    .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(AssetFileInfo),
 };
+
+void AssetFileInfo_class_init() {
+    so_jni_register_class_from_meta(&class_meta);
+}

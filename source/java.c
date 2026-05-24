@@ -7,7 +7,9 @@
 #include "java/AssetFileInfo.h"
 #include "java/Bio4PreActivity.h"
 #include "java/DeviceInfo.h"
+#include "java/StereoViewAdapter.h"
 #include "java/TextBitmap.h"
+#include "java/FileManager.h"
 
 jarray JniNewArray(jsize length, int type) {
     // 创建实例
@@ -15,7 +17,6 @@ jarray JniNewArray(jsize length, int type) {
     if (!instance) {
         return NULL;
     }
-
     // 创建 jobject 封装（jni用）
     jarray array = so_jobject_new(NULL, instance);
     if (!array) {
@@ -27,12 +28,14 @@ jarray JniNewArray(jsize length, int type) {
 }
 
 int soloader_java_init() {
-    so_jni_register_class_from_meta(&JSystem_jclass_meta);
-    so_jni_register_class_from_meta(&AssetFileInfo_jclass_meta);
-    so_jni_register_class_from_meta(&DeviceInfo_jclass_meta);
-    so_jni_register_class_from_meta(&TextBitmap_jclass_meta);
+    JSystem_class_init();
 
-    Bio4PreActivity_init();
+    AssetFileInfo_class_init();
+    Bio4PreActivity_class_init();
+    DeviceInfo_class_init();
+    FileManager_class_init();
+    StereoViewAdapter_class_init();
+    TextBitmap_class_init();
 
     return 0;
 }

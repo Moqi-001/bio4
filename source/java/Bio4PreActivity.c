@@ -119,53 +119,6 @@ void Bio4PreActivity_native_onShake(JNIEnv *env, jobject thiz) {
     JNI_CALL_VOID_NATIVE(native_onShake, env, thiz);
 }
 
-static so_jsymbol Bio4PreActivity_symbols[] = {
-    // native 实例方法
-    SO_JSYMBOL_NATIVE("native_onCreate", "(Ljava/lang/Object;)I", &native_onCreate),
-    SO_JSYMBOL_NATIVE("native_onRestart", "()V", &native_onRestart),
-    SO_JSYMBOL_NATIVE("native_onStart", "()V", &native_onStart),
-    SO_JSYMBOL_NATIVE("native_onResume", "()V", &native_onResume),
-    SO_JSYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;II)Z", &native_onSurfaceCreated),
-    SO_JSYMBOL_NATIVE("native_onSurfaceChanged", "(Ljava/lang/Object;II)Z", &native_onSurfaceChanged),
-    SO_JSYMBOL_NATIVE("native_onDrawFrame", "(Ljava/lang/Object;)I", &native_onDrawFrame),
-    SO_JSYMBOL_NATIVE("native_onPause", "()V", &native_onPause),
-    SO_JSYMBOL_NATIVE("native_onStop", "()V", &native_onStop),
-    SO_JSYMBOL_NATIVE("native_onDestroy", "()V", &native_onDestroy),
-    SO_JSYMBOL_NATIVE("native_onConfigurationChanged", "(Ljava/lang/Object;)V", &native_onConfigurationChanged),
-    SO_JSYMBOL_NATIVE("native_onKeyDown", "(ILjava/lang/Object;)Z", &native_onKeyDown),
-    SO_JSYMBOL_NATIVE("native_onKeyUp", "(ILjava/lang/Object;)Z", &native_onKeyUp),
-    SO_JSYMBOL_NATIVE("native_onTouchEvent", "(III)Z", &native_onTouchEvent),
-    SO_JSYMBOL_NATIVE("native_setStereoHard", "(Ljava/lang/Object;Z)V", &native_setStereoHard),
-    SO_JSYMBOL_NATIVE("native_onTouchBegan", "(Ljava/lang/Object;FFFF)V", &native_onTouchBegan),
-    SO_JSYMBOL_NATIVE("native_onTouchMoved", "(Ljava/lang/Object;FFFF)V", &native_onTouchMoved),
-    SO_JSYMBOL_NATIVE("native_onTouchEnded", "(Ljava/lang/Object;FFFF)V", &native_onTouchEnded),
-    SO_JSYMBOL_NATIVE("native_onTouchCancelled", "(Ljava/lang/Object;FFFF)V", &native_onTouchCancelled),
-    SO_JSYMBOL_NATIVE("native_onShake", "()V", &native_onShake),
-
-    // 静态变量
-    SO_JSYMBOL_STATIC_FIELD("LAUNCH_HEAP", "I", &LAUNCH_HEAP),
-    SO_JSYMBOL_STATIC_FIELD("LGUARM_CHECK", "I", &LGUARM_CHECK),
-};
-
-so_jclass_meta Bio4PreActivity_jclass_meta = {
-    .name          = "jp/co/capcom/android/bio4_LGUplus0119/Bio4PreActivity",
-    .super_name    = NULL,
-    .symbols       = Bio4PreActivity_symbols,
-    .num_symbols   = sizeof(Bio4PreActivity_symbols) / sizeof(Bio4PreActivity_symbols[0]),
-    .instance_size = sizeof(Bio4PreActivity),
-};
-
-int Bio4PreActivity_init() {
-    // 创建 jclass
-    Bio4PreActivity_jclass = so_jclass_create(&Bio4PreActivity_jclass_meta);
-    so_jni_register_class(Bio4PreActivity_jclass);
-    // 创建 jobject
-    Bio4PreActivity_jobject = so_jclass_new_instance(Bio4PreActivity_jclass);
-    sThis                   = (Bio4PreActivity *)so_jobject_get_instance(Bio4PreActivity_jobject);
-
-    return 0;
-}
-
 void Bio4PreActivity_onCreate(ABundle *savedInstanceState) {
     sThis->m_ArmMgr            = NULL;
     sThis->m_pView             = NULL;
@@ -232,6 +185,59 @@ void Bio4PreActivity_onDestroy() {
     sThis->m_isAppAlive = false;
 }
 
-void Bio4PreActivity_setStereoHard(const bool isEnable) {
+void Bio4PreActivity_setStereoHard(const jboolean isEnable) {
     Bio4PreActivity_native_setStereoHard(&_jni_env, Bio4PreActivity_jobject, sThis->m_pView, isEnable);
+}
+
+void Bio4PreActivity_changeStereoHard(jboolean isEnable) {
+    if (isEnable != sThis->m_isStereoFlg) {
+        sThis->m_isStereoFlg = isEnable;
+        Bio4PreActivity_setStereoHard(isEnable);
+    }
+}
+
+static so_jsymbol class_symbols[] = {
+    // native 实例方法
+    SO_JSYMBOL_NATIVE("native_onCreate", "(Ljava/lang/Object;)I", &native_onCreate),
+    SO_JSYMBOL_NATIVE("native_onRestart", "()V", &native_onRestart),
+    SO_JSYMBOL_NATIVE("native_onStart", "()V", &native_onStart),
+    SO_JSYMBOL_NATIVE("native_onResume", "()V", &native_onResume),
+    SO_JSYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;II)Z", &native_onSurfaceCreated),
+    SO_JSYMBOL_NATIVE("native_onSurfaceChanged", "(Ljava/lang/Object;II)Z", &native_onSurfaceChanged),
+    SO_JSYMBOL_NATIVE("native_onDrawFrame", "(Ljava/lang/Object;)I", &native_onDrawFrame),
+    SO_JSYMBOL_NATIVE("native_onPause", "()V", &native_onPause),
+    SO_JSYMBOL_NATIVE("native_onStop", "()V", &native_onStop),
+    SO_JSYMBOL_NATIVE("native_onDestroy", "()V", &native_onDestroy),
+    SO_JSYMBOL_NATIVE("native_onConfigurationChanged", "(Ljava/lang/Object;)V", &native_onConfigurationChanged),
+    SO_JSYMBOL_NATIVE("native_onKeyDown", "(ILjava/lang/Object;)Z", &native_onKeyDown),
+    SO_JSYMBOL_NATIVE("native_onKeyUp", "(ILjava/lang/Object;)Z", &native_onKeyUp),
+    SO_JSYMBOL_NATIVE("native_onTouchEvent", "(III)Z", &native_onTouchEvent),
+    SO_JSYMBOL_NATIVE("native_setStereoHard", "(Ljava/lang/Object;Z)V", &native_setStereoHard),
+    SO_JSYMBOL_NATIVE("native_onTouchBegan", "(Ljava/lang/Object;FFFF)V", &native_onTouchBegan),
+    SO_JSYMBOL_NATIVE("native_onTouchMoved", "(Ljava/lang/Object;FFFF)V", &native_onTouchMoved),
+    SO_JSYMBOL_NATIVE("native_onTouchEnded", "(Ljava/lang/Object;FFFF)V", &native_onTouchEnded),
+    SO_JSYMBOL_NATIVE("native_onTouchCancelled", "(Ljava/lang/Object;FFFF)V", &native_onTouchCancelled),
+    SO_JSYMBOL_NATIVE("native_onShake", "()V", &native_onShake),
+
+    // 静态变量
+    SO_JSYMBOL_STATIC_FIELD("LAUNCH_HEAP", "I", &LAUNCH_HEAP),
+    SO_JSYMBOL_STATIC_FIELD("LGUARM_CHECK", "I", &LGUARM_CHECK),
+};
+
+static so_jclass_meta class_meta = {
+    .name          = "jp/co/capcom/android/bio4_LGUplus0119/Bio4PreActivity",
+    .super_name    = NULL,
+    .symbols       = class_symbols,
+    .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
+    .instance_size = sizeof(Bio4PreActivity),
+};
+
+void Bio4PreActivity_class_init() {
+    // 创建 jclass
+    Bio4PreActivity_jclass = so_jclass_create(&class_meta);
+    so_jni_register_class_take(Bio4PreActivity_jclass);
+    // 创建 jobject
+    Bio4PreActivity_jobject = so_jclass_new_instance(Bio4PreActivity_jclass);
+    // 获取实例
+    sThis = (Bio4PreActivity *)so_jobject_get_instance(Bio4PreActivity_jobject);
 }

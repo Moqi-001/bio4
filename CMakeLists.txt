@@ -83,6 +83,8 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/java/AssetFileInfo.c
   source/java/Bio4PreActivity.c
   source/java/DeviceInfo.c
+  source/java/FileManager.c
+  source/java/StereoViewAdapter.c
   source/java/TextBitmap.c
 
   source/controls.c
@@ -99,6 +101,10 @@ target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
 
 target_include_directories(${CMAKE_PROJECT_NAME}
   PUBLIC ${CMAKE_SOURCE_DIR}/source
+)
+
+target_link_directories (${CMAKE_PROJECT_NAME}
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/lib
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME}

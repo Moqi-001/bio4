@@ -11,15 +11,19 @@ jlong JSystem_currentTimeMillis() {
     return (jlong)(te.tv_sec * 1000LL + te.tv_usec / 1000);
 }
 
-static so_jsymbol JSystem_symbols[] = {
+static so_jsymbol class_symbols[] = {
     // 静态方法
     SO_JSYMBOL_STATIC_METHOD("currentTimeMillis", "()J", &JSystem_currentTimeMillis),
 };
 
-so_jclass_meta JSystem_jclass_meta = {
+static so_jclass_meta class_meta = {
     .name          = "java/lang/System",
     .super_name    = NULL,
-    .symbols       = JSystem_symbols,
-    .num_symbols   = sizeof(JSystem_symbols) / sizeof(JSystem_symbols[0]),
+    .symbols       = class_symbols,
+    .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = 0,
 };
+
+void JSystem_class_init() {
+    so_jni_register_class_from_meta(&class_meta);
+}

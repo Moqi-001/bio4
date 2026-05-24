@@ -24,15 +24,15 @@ typedef struct so_jargs {
     jsize index;
 } so_jargs;
 
-#define SO_JARG(args, T) _Generic((T)0,                                                         \
-    jboolean: ((args)->is_va ? va_arg((args)->va, jboolean) : (args)->vals[(args)->index++].z), \
-    jbyte: ((args)->is_va ? va_arg((args)->va, jbyte) : (args)->vals[(args)->index++].b),       \
-    jchar: ((args)->is_va ? va_arg((args)->va, jchar) : (args)->vals[(args)->index++].c),       \
-    jshort: ((args)->is_va ? va_arg((args)->va, jshort) : (args)->vals[(args)->index++].s),     \
-    jint: ((args)->is_va ? va_arg((args)->va, jint) : (args)->vals[(args)->index++].i),         \
-    jlong: ((args)->is_va ? va_arg((args)->va, jlong) : (args)->vals[(args)->index++].j),       \
-    jfloat: ((args)->is_va ? va_arg((args)->va, jfloat) : (args)->vals[(args)->index++].f),     \
-    jdouble: ((args)->is_va ? va_arg((args)->va, jdouble) : (args)->vals[(args)->index++].d),   \
+#define SO_JARG(args, T) _Generic((T)0,                                                               \
+    jboolean: ((args)->is_va ? (jboolean)va_arg((args)->va, jint) : (args)->vals[(args)->index++].z), \
+    jbyte: ((args)->is_va ? va_arg((args)->va, jbyte) : (args)->vals[(args)->index++].b),             \
+    jchar: ((args)->is_va ? va_arg((args)->va, jchar) : (args)->vals[(args)->index++].c),             \
+    jshort: ((args)->is_va ? va_arg((args)->va, jshort) : (args)->vals[(args)->index++].s),           \
+    jint: ((args)->is_va ? va_arg((args)->va, jint) : (args)->vals[(args)->index++].i),               \
+    jlong: ((args)->is_va ? va_arg((args)->va, jlong) : (args)->vals[(args)->index++].j),             \
+    jfloat: ((args)->is_va ? (jfloat)va_arg((args)->va, jdouble) : (args)->vals[(args)->index++].f),  \
+    jdouble: ((args)->is_va ? va_arg((args)->va, jdouble) : (args)->vals[(args)->index++].d),         \
     jobject: ((args)->is_va ? va_arg((args)->va, jobject) : (args)->vals[(args)->index++].l))
 
 extern JavaVM _java_vm;

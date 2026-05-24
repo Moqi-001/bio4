@@ -35,14 +35,14 @@ static jbyteArray CreateTextBitmap(so_jargs *args) {  // (String text, int x, in
     jint        y    = SO_JARG(args, jint);
 
     m_nSizeByte   = 512;
-    m_nWidText    = 12;
-    m_nHeiText    = 12;
-    m_nWidStrText = 12;
-    m_nHeiStrText = 12;
+    m_nWidText    = 24;
+    m_nHeiText    = 24;
+    m_nWidStrText = 24;
+    m_nHeiStrText = 24;
 
     jbyteArray bitmap = JniCallNewByteArray(m_nSizeByte);
 
-    so_logd("[TextBitmap] CreateTextBitmap(%s,%d,%d)", text, x, y);
+    so_logd("[TextBitmap] CreateTextBitmap('%s',%d,%d)", text, x, y);
     return bitmap;
 }
 
@@ -51,6 +51,7 @@ static jbyteArray GetParam() {
     if (!m_TextParam) {
         m_TextParam = JniNewArray(20, SO_JARRAY_TYPE_BYTE);
     }
+
     jbyte *bytes = JniGetArrayElems(m_TextParam);
 
     // int 转小端
@@ -110,17 +111,21 @@ static jint SetupFontSize(so_jargs *args) {  // (jint size)
     return m_FontSize;
 }
 
-static so_jsymbol TextBitmap_symbols[] = {
+static so_jsymbol class_symbols[] = {
     // 静态方法
     SO_JSYMBOL_STATIC_METHOD("CreateTextBitmap", "(Ljava/lang/String;II)[B", &CreateTextBitmap),
     SO_JSYMBOL_STATIC_METHOD("GetParam", "()[B", &GetParam),
     SO_JSYMBOL_STATIC_METHOD("SetupFontSize", "(I)I", &SetupFontSize),
 };
 
-so_jclass_meta TextBitmap_jclass_meta = {
+static so_jclass_meta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/TextBitmap",
     .super_name    = NULL,
-    .symbols       = TextBitmap_symbols,
-    .num_symbols   = sizeof(TextBitmap_symbols) / sizeof(TextBitmap_symbols[0]),
+    .symbols       = class_symbols,
+    .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(TextBitmap),
 };
+
+void TextBitmap_class_init() {
+    so_jni_register_class_from_meta(&class_meta);
+}

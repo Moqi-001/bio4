@@ -1,8 +1,6 @@
 #ifndef BIO4_PRE_ACTIVITY_H
 #define BIO4_PRE_ACTIVITY_H
 
-#include <stdbool.h>
-
 #include <so_jni/so_jni.h>
 
 #include "android/Bundle.h"
@@ -37,8 +35,9 @@ void Bio4PreActivity_onResume();
 void Bio4PreActivity_onPause();
 void Bio4PreActivity_onStop();
 void Bio4PreActivity_onDestroy();
-void Bio4PreActivity_setStereoHard(const bool isEnable);
+void Bio4PreActivity_setStereoHard(const jboolean isEnable);
+void Bio4PreActivity_changeStereoHard(jboolean isEnable);
 
-int Bio4PreActivity_init();
+void Bio4PreActivity_class_init();
 
 #endif

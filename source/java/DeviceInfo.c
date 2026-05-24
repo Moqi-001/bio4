@@ -16,15 +16,19 @@ static jstring getFilePath() {
     return JniCallNewStringUTF(FILES_PATH);
 }
 
-static so_jsymbol DeviceInfo_symbols[] = {
+static so_jsymbol class_symbols[] = {
     // 静态方法
     SO_JSYMBOL_STATIC_METHOD("getFilePath", "()Ljava/lang/String;", &getFilePath),
 };
 
-so_jclass_meta DeviceInfo_jclass_meta = {
+static so_jclass_meta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/DeviceInfo",
     .super_name    = NULL,
-    .symbols       = DeviceInfo_symbols,
-    .num_symbols   = sizeof(DeviceInfo_symbols) / sizeof(DeviceInfo_symbols[0]),
+    .symbols       = class_symbols,
+    .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
     .instance_size = sizeof(DeviceInfo),
 };
+
+void DeviceInfo_class_init() {
+    so_jni_register_class_from_meta(&class_meta);
+}
