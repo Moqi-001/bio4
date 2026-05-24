@@ -9,13 +9,15 @@
 
 #include "Bio4PreActivity.h"
 
-#include "android/AActivity.h"
+#include "android/Activity.h"
 #include "android/GLSurfaceView.h"
 #include "lang/System.h"
-#include "LGUArmManager.h"
 
 #include "config.h"
+#include "controls.h"
 #include "utils/utils.h"
+
+typedef struct LGUArmManager LGUArmManager;
 
 typedef struct Bio4PreActivity {
     LGUArmManager  *m_ArmMgr;
@@ -34,6 +36,7 @@ static Bio4PreActivity *sThis;
 
 static const long LAUNCH_HEAP  = 16777216;
 static const int  LGUARM_CHECK = 1;
+
 static jint (*native_onCreate)(JNIEnv *env, jobject thiz, jobject ctx);
 static void (*native_onRestart)(JNIEnv *env, jobject thiz);
 static void (*native_onStart)(JNIEnv *env, jobject thiz);
@@ -56,7 +59,6 @@ static void (*native_onTouchCancelled)(JNIEnv *env, jobject thiz, jobject pTouch
 static void (*native_onShake)(JNIEnv *env, jobject thiz);
 
 jint Bio4PreActivity_native_onCreate(JNIEnv *env, jobject thiz, jobject ctx) {
-    so_logd("native_onCreate=%p", native_onCreate);
     return JNI_CALL_TYPE_NATIVE(jint, native_onCreate, env, thiz, ctx);
 }
 void Bio4PreActivity_native_onRestart(JNIEnv *env, jobject thiz) {
@@ -153,10 +155,6 @@ so_jclass_meta Bio4PreActivity_jclass_meta = {
     .instance_size = sizeof(Bio4PreActivity),
 };
 
-static void onArmResult(LGUArmListener *listener) {
-    so_logd("Main onArmResult");
-}
-
 int Bio4PreActivity_init() {
     // 创建 jclass
     Bio4PreActivity_jclass = so_jclass_create(&Bio4PreActivity_jclass_meta);
@@ -172,7 +170,7 @@ void Bio4PreActivity_onCreate(ABundle *savedInstanceState) {
     sThis->m_ArmMgr            = NULL;
     sThis->m_pView             = NULL;
     sThis->m_isLaunchHeapCheck = true;
-    sThis->m_nPrevTime         = System_currentTimeMillis();
+    sThis->m_nPrevTime         = JSystem_currentTimeMillis();
     sThis->m_isAppAlive        = false;
     sThis->m_isStereoFlg       = true;
     sThis->m_isDebugCnt        = 0;
@@ -180,33 +178,23 @@ void Bio4PreActivity_onCreate(ABundle *savedInstanceState) {
 
     so_logi("Main onCreate");
     Bio4PreActivity_native_onCreate(&_jni_env, Bio4PreActivity_jobject, NULL);
-    sThis->m_ArmMgr = LGUArmManager_new((AActivity *)sThis);
-
-    LGUArmListener armListener;
-    armListener.onArmResult = onArmResult;
-    LGUArmManager_setArmListener(sThis->m_ArmMgr, &armListener);
-    LGUArmManager_ARM_Plugin_ExecuteARM(sThis->m_ArmMgr, sThis->m_ArmAID);
 }
 
 static void mainLoop() {
-    sThis->m_isAppAlive = 1;
-
     while (sThis->m_isAppAlive) {
-        jlong nCurrTime = System_currentTimeMillis();
+        jlong nCurrTime = JSystem_currentTimeMillis();
         jlong nDiffTime = nCurrTime - sThis->m_nPrevTime;
-
         if (nDiffTime < 44) {
             sceKernelDelayThread((44 - nDiffTime) * 1000);
         }
+        sThis->m_nPrevTime = JSystem_currentTimeMillis();
 
-        sThis->m_nPrevTime = System_currentTimeMillis();
-        if (Bio4PreActivity_native_onDrawFrame(&_jni_env, Bio4PreActivity_jobject, NULL) != 1) {
-            so_logd("Bio4PreActivity.native_onDrawFrame: failed!");
-            continue;
-        }
-
-        Bio4PreActivity_native_setStereoHard(&_jni_env, Bio4PreActivity_jobject, sThis->m_pView, sThis->m_isStereoFlg);
+        controls_poll();
+        jint res = Bio4PreActivity_native_onDrawFrame(&_jni_env, Bio4PreActivity_jobject, NULL);
         vglSwapBuffers(GL_FALSE);
+        if (res == 1) {
+            Bio4PreActivity_native_setStereoHard(&_jni_env, Bio4PreActivity_jobject, sThis->m_pView, sThis->m_isStereoFlg);
+        }
     }
 }
 
@@ -214,7 +202,7 @@ void Bio4PreActivity_onStart() {
     so_logi("Main onStart");
     Bio4PreActivity_native_onSurfaceCreated(&_jni_env, Bio4PreActivity_jobject, NULL, NULL, SCREEN_W, SCREEN_H);
     Bio4PreActivity_native_onSurfaceChanged(&_jni_env, Bio4PreActivity_jobject, NULL, SCREEN_W, SCREEN_H);
-    Bio4PreActivity_native_setStereoHard(&_jni_env, Bio4PreActivity_jobject, sThis->m_pView, sThis->m_isStereoFlg);
+    sThis->m_isAppAlive = 1;
     mainLoop();
 }
 

@@ -78,11 +78,14 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/utils/dialog.c
   source/utils/utils.c
 
+  source/java/android/Paint.c
   source/java/lang/System.c
   source/java/AssetFileInfo.c
   source/java/Bio4PreActivity.c
-  source/java/LGUArmManager.c
+  source/java/DeviceInfo.c
+  source/java/TextBitmap.c
 
+  source/controls.c
   source/java.c
   source/loader.c
   source/main.c

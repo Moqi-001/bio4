@@ -3,8 +3,8 @@
 
 #include <so_jni/so_jni.h>
 
-extern so_jclass_meta System_jclass_meta;
+extern so_jclass_meta JSystem_jclass_meta;
 
-jlong System_currentTimeMillis();
+jlong JSystem_currentTimeMillis();
 
 #endif

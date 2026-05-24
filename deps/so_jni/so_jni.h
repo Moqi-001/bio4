@@ -10,6 +10,7 @@ extern "C" {
 #include "so_jarray.h"
 #include "so_jbuffer.h"
 #include "so_jclass.h"
+#include "so_jinstance.h"
 #include "so_jobject.h"
 #include "so_jref.h"
 #include "so_jstring.h"

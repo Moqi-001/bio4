@@ -5,7 +5,7 @@
 
 #include <so_jni/so_jni.h>
 
-#include "android/ABundle.h"
+#include "android/Bundle.h"
 
 extern jclass  Bio4PreActivity_jclass;
 extern jobject Bio4PreActivity_jobject;

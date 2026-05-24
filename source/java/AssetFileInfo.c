@@ -7,31 +7,27 @@
 #include <so_jni/so_jni.h>
 
 #include "config.h"
+#include "java.h"
 
-// 每次读取文件都要读取 apk，用假的文件代替
-#define PACKAGE_PATH "app0:eboot.bin"
-
-typedef struct AssetFileInfo {  // throws IOException
+typedef struct AssetFileInfo {
     uint32_t reserved;
 } AssetFileInfo;
 
 static jlong m_nFileOffset;
 static jlong m_nFileLength;
+static char  m_pFilePath[1024];
 
 // static "calcInfo", "(Ljava/lang/String;)Z"
-bool AssetFileInfo_calcInfo(so_jargs *args) {
-    jstring pFileName = SO_JARG(args, jstring);
+static bool calcInfo(so_jargs *args) {  // (String pFileName)
+    const char *pFileName = JniGetStringUTFChars(SO_JARG(args, jstring));
 
-    char        path[1024];
-    const char *fileName = so_jstring_get_utf8_chars(so_jobject_get_instance(pFileName));
+    snprintf(m_pFilePath, sizeof(m_pFilePath), "%s%s.png", SO_ASSETS_DIR, pFileName);
 
-    snprintf(path, sizeof(path), "%s%s.png", SO_ASSETS_DIR, fileName);
-
-    SceUID fd = sceIoOpen(path, SCE_O_RDONLY, 0);
+    SceUID fd = sceIoOpen(m_pFilePath, SCE_O_RDONLY, 0);
     if (fd < 0) {
         m_nFileOffset = 0;
         m_nFileLength = 0;
-        so_loge("[AssetFileInfo] calcInfo('%s'): '%s' not exists!", fileName, path);
+        so_loge("[AssetFileInfo] calcInfo('%s'): '%s' not exists!", pFileName, m_pFilePath);
         return false;
     }
 
@@ -40,23 +36,22 @@ bool AssetFileInfo_calcInfo(so_jargs *args) {
 
     sceIoClose(fd);
 
-    so_logd("[AssetFileInfo] calcInfo('%s'): length=%lld", fileName, m_nFileLength);
+    so_logd("[AssetFileInfo] calcInfo('%s'): length=%lld", pFileName, m_nFileLength);
     return true;
 }
 
 // static, "getPackagePath", "()Ljava/lang/String;"
-jstring AssetFileInfo_getPackagePath() {
-    // return DeviceInfo.getPackagePath();
-    return (_jni_env)->NewStringUTF(&_jni_env, PACKAGE_PATH);
+static jstring getPackagePath() {
+    return JniCallNewStringUTF(m_pFilePath);
 }
 
 // static, "getStartOffset", "()J"
-jlong AssetFileInfo_getStartOffset() {
+static jlong getStartOffset() {
     return m_nFileOffset;
 }
 
 // static, "getLength", "()J"
-jlong AssetFileInfo_getLength() {
+static jlong getLength() {
     return m_nFileLength;
 }
 
@@ -66,10 +61,10 @@ static so_jsymbol AssetFileInfo_symbols[] = {
     SO_JSYMBOL_STATIC_FIELD("m_nFileLength", "J", &m_nFileLength),
 
     // 静态方法
-    SO_JSYMBOL_STATIC_METHOD("calcInfo", "(Ljava/lang/String;)Z", &AssetFileInfo_calcInfo),
-    SO_JSYMBOL_STATIC_METHOD("getPackagePath", "()Ljava/lang/String;", &AssetFileInfo_getPackagePath),
-    SO_JSYMBOL_STATIC_METHOD("getStartOffset", "()J", &AssetFileInfo_getStartOffset),
-    SO_JSYMBOL_STATIC_METHOD("getLength", "()J", &AssetFileInfo_getLength),
+    SO_JSYMBOL_STATIC_METHOD("calcInfo", "(Ljava/lang/String;)Z", &calcInfo),
+    SO_JSYMBOL_STATIC_METHOD("getPackagePath", "()Ljava/lang/String;", &getPackagePath),
+    SO_JSYMBOL_STATIC_METHOD("getStartOffset", "()J", &getStartOffset),
+    SO_JSYMBOL_STATIC_METHOD("getLength", "()J", &getLength),
 };
 
 so_jclass_meta AssetFileInfo_jclass_meta = {

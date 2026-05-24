@@ -1,5 +1,5 @@
-#ifndef ANDROID_AIBINDER_H
-#define ANDROID_AIBINDER_H
+#ifndef ANDROID_GL_SURFACE_VIEW_H
+#define ANDROID_GL_SURFACE_VIEW_H
 
 typedef struct AGLSurfaceView AGLSurfaceView;
 

@@ -117,8 +117,6 @@ int soloader_init() {
     return 0;
 }
 
-void *(*mceGraphics3D_create_ie)(int a1, int a2, int *err);
-
 int soloader_run() {
     so_logd("[LOADER] soloader_run...");
 
