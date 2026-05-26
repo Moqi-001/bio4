@@ -40,8 +40,8 @@ so_module *so_context_find_module(so_context *context, const char *soname) {
     return NULL;
 }
 
-static int _context_add_module(so_context *context, so_module *mod, int retain) {
-    if (!context || !mod) return -1;
+int so_context_add_module(so_context *context, so_module *mod) {
+    if (!context || !mod || mod->cookie) return -1;
 
     so_module_node *node = calloc(1, sizeof(so_module_node));
     if (!node) {
@@ -62,19 +62,7 @@ static int _context_add_module(so_context *context, so_module *mod, int retain) 
 
     context->num_modules++;
 
-    if (retain) {
-        so_module_retain(mod);
-    }
-
     return 0;
-}
-
-int so_context_add_module(so_context *context, so_module *mod) {
-    return _context_add_module(context, mod, 1);
-}
-
-int so_context_add_module_take(so_context *context, so_module *mod) {
-    return _context_add_module(context, mod, 0);
 }
 
 int so_context_remove_module(so_context *context, so_module *mod) {

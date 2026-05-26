@@ -92,12 +92,13 @@ struct so_module_node {
 };
 
 so_context *so_linker_get_context();
+int         so_linker_register_module(so_module *mod);
+int         so_linker_unregister_module(so_module *mod);
 
 so_context *so_context_create();
 void        so_context_destroy(so_context *context);
 so_module  *so_context_find_module(so_context *context, const char *soname);
 int         so_context_add_module(so_context *context, so_module *mod);
-int         so_context_add_module_take(so_context *context, so_module *mod);
 int         so_context_remove_module(so_context *context, so_module *mod);
 
 #ifdef __cplusplus

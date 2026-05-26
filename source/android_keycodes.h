@@ -1,0 +1,90 @@
+#ifndef ANDROID_KEYCODES_H
+#define ANDROID_KEYCODES_H
+
+// 数字键
+#define AKEYCODE_0 7
+#define AKEYCODE_1 8
+#define AKEYCODE_2 9
+#define AKEYCODE_3 10
+#define AKEYCODE_4 11
+#define AKEYCODE_5 12
+#define AKEYCODE_6 13
+#define AKEYCODE_7 14
+#define AKEYCODE_8 15
+#define AKEYCODE_9 16
+
+// 字母键
+#define AKEYCODE_A 29
+#define AKEYCODE_B 30
+#define AKEYCODE_C 31
+#define AKEYCODE_D 32
+#define AKEYCODE_E 33
+#define AKEYCODE_F 34
+#define AKEYCODE_G 35
+#define AKEYCODE_H 36
+#define AKEYCODE_I 37
+#define AKEYCODE_J 38
+#define AKEYCODE_K 39
+#define AKEYCODE_L 40
+#define AKEYCODE_M 41
+#define AKEYCODE_N 42
+#define AKEYCODE_O 43
+#define AKEYCODE_P 44
+#define AKEYCODE_Q 45
+#define AKEYCODE_R 46
+#define AKEYCODE_S 47
+#define AKEYCODE_T 48
+#define AKEYCODE_U 49
+#define AKEYCODE_V 50
+#define AKEYCODE_W 51
+#define AKEYCODE_X 52
+#define AKEYCODE_Y 53
+#define AKEYCODE_Z 54
+
+// 特殊键
+#define AKEYCODE_ALT_LEFT    57
+#define AKEYCODE_ALT_RIGHT   58
+#define AKEYCODE_SHIFT_LEFT  59
+#define AKEYCODE_SHIFT_RIGHT 60
+#define AKEYCODE_ENTER       66
+
+// 功能键
+#define AKEYCODE_F1  131
+#define AKEYCODE_F2  132
+#define AKEYCODE_F3  133
+#define AKEYCODE_F4  134
+#define AKEYCODE_F5  135
+#define AKEYCODE_F6  136
+#define AKEYCODE_F7  137
+#define AKEYCODE_F8  138
+#define AKEYCODE_F9  139
+#define AKEYCODE_F10 140
+#define AKEYCODE_F11 141
+#define AKEYCODE_F12 142
+
+// 系统导航键
+#define AKEYCODE_BACK       4
+#define AKEYCODE_HOME       3
+#define AKEYCODE_MENU       82
+#define AKEYCODE_APP_SWITCH 187
+
+// 方向键 (DPAD)
+#define AKEYCODE_DPAD_UP     19
+#define AKEYCODE_DPAD_DOWN   20
+#define AKEYCODE_DPAD_LEFT   21
+#define AKEYCODE_DPAD_RIGHT  22
+#define AKEYCODE_DPAD_CENTER 23
+
+// 手柄按键 (BUTTON)
+#define AKEYCODE_BUTTON_A      96
+#define AKEYCODE_BUTTON_B      97
+#define AKEYCODE_BUTTON_X      99
+#define AKEYCODE_BUTTON_Y      100
+#define AKEYCODE_BUTTON_L1     102
+#define AKEYCODE_BUTTON_R1     103
+#define AKEYCODE_BUTTON_L2     104
+#define AKEYCODE_BUTTON_R2     105
+#define AKEYCODE_BUTTON_START  108
+#define AKEYCODE_BUTTON_SELECT 109
+
+#endif

@@ -26,13 +26,13 @@ int jniRegisterNativeMethods(JNIEnv                *env,
                              const JNINativeMethod *methods,
                              int                    numMethods) {
     
-    jclass *clazz = so_jni_find_class(className);
+    jclass *clazz = JniFindClass(className);
     if (!clazz) {
         so_logd("[JNI] jniRegisterNativeMethods(%p,'%s',%p,%d): class not found!", env, className, methods, numMethods);
         return -1;
     }
 
-    int result = so_jclass_register_natives(clazz, methods, numMethods);
+    int result = JniRegisterNatives(clazz, methods, numMethods);
 
     so_logd("[JNI] jniRegisterNativeMethods(%p,'%s',%p,%d): %d", env, className, methods, numMethods, result);
     return result;

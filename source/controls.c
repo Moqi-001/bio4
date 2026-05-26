@@ -5,35 +5,32 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
 
-#include "config.h"
 #include "java/Bio4PreActivity.h"
 
-#define AKEYCODE_DPAD_UP       19
-#define AKEYCODE_DPAD_DOWN     20
-#define AKEYCODE_DPAD_LEFT     21
-#define AKEYCODE_DPAD_RIGHT    22
-#define AKEYCODE_BUTTON_A      96
-#define AKEYCODE_BUTTON_B      97
-#define AKEYCODE_BUTTON_X      99
-#define AKEYCODE_BUTTON_Y      100
-#define AKEYCODE_BUTTON_L1     102
-#define AKEYCODE_BUTTON_R1     103
-#define AKEYCODE_BUTTON_START  108
-#define AKEYCODE_BUTTON_SELECT 109
+#include "android_keycodes.h"
+#include "config.h"
 
 typedef struct {
-    uint32_t sce_button;
-    uint32_t android_button;
+    uint32_t native;
+    uint32_t mapped;
     int      repeat_count;
-} ButtonMapping;
+} ButtonRemap;
 
 typedef struct {
-    uint32_t sce_button;
+    uint32_t button;
     uint32_t x;
     uint32_t y;
-} ButtonToTouchMapping;
+} ButtonToTouch;
 
-static ButtonMapping mapping[] = {
+typedef struct UITouchInfo {
+    int   nPointerId;
+    float nCurrPointX;
+    float nCurrPointY;
+    float nPrevPointX;
+    float nPrevPointY;
+} UITouchInfo;
+
+static ButtonRemap remap[] = {
     {SCE_CTRL_UP,       AKEYCODE_DPAD_UP,       0},
     {SCE_CTRL_DOWN,     AKEYCODE_DPAD_DOWN,     0},
     {SCE_CTRL_LEFT,     AKEYCODE_DPAD_LEFT,     0},
@@ -48,23 +45,15 @@ static ButtonMapping mapping[] = {
     {SCE_CTRL_SELECT,   AKEYCODE_BUTTON_SELECT, 0},
 };
 
-typedef struct UITouchInfo {
-    int   nPointerId;
-    float nCurrPointX;
-    float nCurrPointY;
-    float nPrevPointX;
-    float nPrevPointY;
-} UITouchInfo;
-
-#define navite_touchDown(pTouchInfo, currX, currY, prevX, prevY) \
+#define native_touchDown(pTouchInfo, currX, currY, prevX, prevY) \
     Bio4PreActivity_native_onTouchBegan(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
-#define navite_touchMove(pTouchInfo, currX, currY, prevX, prevY) \
+#define native_touchMove(pTouchInfo, currX, currY, prevX, prevY) \
     Bio4PreActivity_native_onTouchMoved(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
-#define navite_touchUp(pTouchInfo, currX, currY, prevX, prevY) \
+#define native_touchUp(pTouchInfo, currX, currY, prevX, prevY) \
     Bio4PreActivity_native_onTouchEnded(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
-#define navite_keyDown(keyCode, event) \
+#define native_keyDown(keyCode, event) \
     Bio4PreActivity_native_onKeyDown(&_jni_env, Bio4PreActivity_jobject, keyCode, event)
-#define navite_keyUp(keyCode, event) \
+#define native_keyUp(keyCode, event) \
     Bio4PreActivity_native_onKeyDown(&_jni_env, Bio4PreActivity_jobject, keyCode, event)
 
 void controls_poll() {
@@ -90,17 +79,17 @@ void controls_poll() {
     } else if (pad.ly < 92) {
         pad.buttons |= SCE_CTRL_UP;
     }
-    for (int i = 0; i < sizeof(mapping) / sizeof(ButtonMapping); i++) {
-        int curr_pressed = ((pad.buttons & mapping[i].sce_button) == mapping[i].sce_button);
-        int prev_pressed = ((prev_buttons & mapping[i].sce_button) == mapping[i].sce_button);
+    for (int i = 0; i < sizeof(remap) / sizeof(ButtonRemap); i++) {
+        int curr_pressed = ((pad.buttons & remap[i].native) == remap[i].native);
+        int prev_pressed = ((prev_buttons & remap[i].native) == remap[i].native);
         if (curr_pressed) {
             if (!prev_pressed)
-                navite_keyDown(mapping[i].android_button, NULL);
-            mapping[i].repeat_count++;
+                native_keyDown(remap[i].mapped, NULL);
+            remap[i].repeat_count++;
         } else {
             if (prev_pressed)
-                navite_keyUp(mapping[i].android_button, NULL);
-            mapping[i].repeat_count = 0;
+                native_keyUp(remap[i].mapped, NULL);
+            remap[i].repeat_count = 0;
         }
     }
     prev_buttons = pad.buttons;
@@ -113,13 +102,13 @@ void controls_poll() {
             touchInfo[i].nCurrPointY = (float)touch.report[i].y * (float)SCREEN_H / 1088.0f;
 
             if (touchInfo[i].nPrevPointX == -1 || touchInfo[i].nPrevPointY == -1) {
-                navite_touchDown(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
+                native_touchDown(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
             } else if (touchInfo[i].nCurrPointX != touchInfo[i].nPrevPointX || touchInfo[i].nCurrPointY != touchInfo[i].nPrevPointY) {
-                navite_touchMove(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
+                native_touchMove(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
             }
         } else {
             if (touchInfo[i].nPrevPointX != -1 || touchInfo[i].nPrevPointY != -1) {
-                navite_touchUp(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
+                native_touchUp(&touchInfo[i], touchInfo[i].nCurrPointX, touchInfo[i].nCurrPointY, touchInfo[i].nPrevPointX, touchInfo[i].nPrevPointY);
             }
             touchInfo[i].nCurrPointX = -1;
             touchInfo[i].nCurrPointY = -1;

@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <so_common/so_logger.h>
-
 #include "so_jni.h"
 #include "so_jni_internal.h"
 
@@ -254,10 +252,11 @@ static const struct JNINativeInterface _jni_native_interface = {
 JavaVM _java_vm = (JavaVM)&_jni_invoke_interface;
 JNIEnv _jni_env = (JNIEnv)&_jni_native_interface;
 
-static so_jclass_node *_so_jclass_head = NULL;
-
 jint so_jni_init(void) {
-    if (so_jref_global_init() != JNI_OK) {
+    if (JniPushGlobalFrame() != JNI_OK) {
+        return -1;
+    }
+    if (JniPushLocalFrame(0) != JNI_OK) {
         return -1;
     }
 
@@ -265,117 +264,7 @@ jint so_jni_init(void) {
 }
 
 void so_jni_fini(void) {
-    if (_so_jclass_head) {
-        so_jclass_node *node = _so_jclass_head;
-        while (node) {
-            so_jclass_node *next = node->next;
-            // so_jclass_unregister_natives(node->clazz);
-            so_jobject_release(node->clazz);
-            free(node);
-            node = next;
-        }
-        _so_jclass_head = NULL;
-    }
-
-    so_jref_global_fini();
-}
-
-jclass so_jni_find_class(const char *name) {
-    if (!name) return NULL;
-
-    so_jclass_node *node = _so_jclass_head;
-    while (node) {
-        const char *cls_name = so_jclass_get_name(node->clazz);
-        if (cls_name && strcmp(cls_name, name) == 0) {
-            // so_logd("[JNI] so_jni_find_class('%s'): %p", name, node->clazz);
-            return node->clazz;
-        }
-        node = node->next;
-    }
-
-    // so_loge("[JNI] so_jni_find_class('%s'): not found!", name);
-    return NULL;
-}
-
-static jint _jni_register_class(jclass clazz, jint retain) {
-    if (!clazz) return JNI_EINVAL;
-
-    so_jclass_node *node = (so_jclass_node *)calloc(1, sizeof(so_jclass_node));
-    if (!node) {
-        return JNI_ENOMEM;
-    }
-
-    if (retain) {
-        node->clazz = so_jobject_retain(clazz);
-    } else {
-        node->clazz = clazz;
-    }
-
-    if (!_so_jclass_head) {
-        _so_jclass_head = node;
-    } else {
-        _so_jclass_head->prev = node;
-        node->next            = _so_jclass_head;
-        _so_jclass_head       = node;
-    }
-
-    return JNI_OK;
-}
-
-jint so_jni_register_class(jclass clazz) {
-    jint result = _jni_register_class(clazz, 1);
-    if (result != JNI_OK) {
-        so_loge("[JNI] so_jni_register_class(%p): error! ('%s')", clazz, so_jclass_get_name(clazz));
-        return result;
-    }
-
-    so_logd("[JNI] so_jni_register_class(%p): ('%s')", clazz, so_jclass_get_name(clazz));
-    return JNI_OK;
-}
-
-jint so_jni_register_class_take(jclass clazz) {
-    jint result = _jni_register_class(clazz, 0);
-    if (result != JNI_OK) {
-        so_loge("[JNI] so_jni_register_class_take(%p): error! ('%s')", clazz, so_jclass_get_name(clazz));
-        return result;
-    }
-
-    so_logd("[JNI] so_jni_register_class_take(%p): ('%s')", clazz, so_jclass_get_name(clazz));
-    return JNI_OK;
-}
-
-jint so_jni_register_class_from_meta(so_jclass_meta *meta) {
-    jclass clazz = so_jclass_create(meta);
-    if (!clazz) {
-        so_loge("[JNI] so_jni_register_class_from_meta(%p): failed to create class! ('%s')", meta, meta->name);
-        return JNI_ERR;
-    }
-    jint result = _jni_register_class(clazz, 0);
-    if (result != JNI_OK) {
-        so_jobject_release(clazz);
-        so_loge("[JNI] so_jni_register_class_from_meta(%p): error! ('%s')", meta, meta->name);
-        return result;
-    }
-
-    so_logd("[JNI] so_jni_register_class_from_meta(%p): ('%s')", meta, meta->name);
-    return JNI_OK;
-}
-
-uint32_t so_jni_hash(const char *name, const char *sig) {
-    uint32_t       h = 0, g;
-    const uint8_t *p = (const uint8_t *)name;
-    while (*p) {
-        h = (h << 4) + *p++;
-        if ((g = (h & 0xf0000000)) != 0)
-            h ^= g >> 24;
-        h &= 0x0fffffff;
-    }
-    p = (const uint8_t *)sig;
-    while (*p) {
-        h = (h << 4) + *p++;
-        if ((g = (h & 0xf0000000)) != 0)
-            h ^= g >> 24;
-        h &= 0x0fffffff;
-    }
-    return h;
+    JniClearClasses();
+    JniPopLocalFrame(NULL);
+    JniPopGlobalFrame();
 }

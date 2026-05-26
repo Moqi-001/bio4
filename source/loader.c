@@ -48,15 +48,15 @@ static int check_opengl() {
 }
 
 static int init_needed_modules() {
-    so_linker_register_module_from_library(&so_library_c);
-    so_linker_register_module_from_library(&so_library_stdcpp);
-    so_linker_register_module_from_library(&so_library_m);
-    so_linker_register_module_from_library(&so_library_EGL);
-    so_linker_register_module_from_library(&so_library_GLESv1_CM);
-    so_linker_register_module_from_library(&so_library_log);
-    so_linker_register_module_from_library(&so_library_dl);
-    so_linker_register_module_from_library(&so_library_cutils);
-    so_linker_register_module_from_library(&so_library_dvm);
+    so_module_create(&so_library_c);
+    so_module_create(&so_library_stdcpp);
+    so_module_create(&so_library_m);
+    so_module_create(&so_library_EGL);
+    so_module_create(&so_library_GLESv1_CM);
+    so_module_create(&so_library_log);
+    so_module_create(&so_library_dl);
+    so_module_create(&so_library_cutils);
+    so_module_create(&so_library_dvm);
 
     return 0;
 }
@@ -75,7 +75,6 @@ so_module *soloader_load_library(const char *soname) {
         fatal_error("Error: could not load %s.", path);
         return NULL;
     }
-    so_linker_register_module(mod);
 
     so_logd("[LOADER] load_library success: soname='%s', load_base=%p", so_module_name(mod), so_module_load_base(mod));
     return mod;

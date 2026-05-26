@@ -7,20 +7,20 @@
 #include <so_jni/so_jni.h>
 #include <so_linker/so_linker.h>
 
-#include "java/lang/System.h"
 #include "java.h"
+#include "java/lang/System.h"
 
 typedef struct JavaCall JavaCall;
 jstring (*JavaCall_callStaticStringMethod)(JavaCall *thiz, const char *name, const char *sig);
 
 char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const char *sig, ...) {
     jstring     str    = JavaCall_callStaticStringMethod(thiz, name, sig);
-    const char *utf8   = JniCallGetStringUTFChars(str, NULL);
+    const char *utf8   = JniGetStringUTFChars(str, NULL);
     size_t      len    = strlen(utf8);
     char       *result = malloc(len + 1);
     strcpy(result, utf8);
-    JniCallReleaseStringUTFChars(str, utf8);
-    JniCallDeleteLocalRef(str);
+    JniReleaseStringUTFChars(str, utf8);
+    JniDeleteLocalRef(str);
     return result;
 }
 

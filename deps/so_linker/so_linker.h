@@ -41,12 +41,6 @@ int  so_linker_init();
 void so_linker_fini();
 
 so_module *so_linker_find_module(const char *soname);
-int        so_linker_register_module(so_module *mod);
-int        so_linker_register_module_take(so_module *mod);
-int        so_linker_register_module_from_library(so_library *lib);
-int        so_linker_unregister_module(so_module *mod);
-
-uint32_t so_sysv_hash(const char *name);
 
 void *so_mmap(size_t length);
 void  so_munmap(void *addr);

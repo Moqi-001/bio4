@@ -2,28 +2,12 @@
 
 #include <so_common/so_shared_buffer.h>
 
-#include "so_jni.h"
 #include "so_jni_internal.h"
-
-struct so_jref {
-    jobjectRefType type;   // 引用类型
-    jobject        obj;    // JNI 对象
-    so_jframe     *frame;  // 所属帧
-    so_jref       *prev;
-    so_jref       *next;
-};
-
-struct so_jframe {
-    so_jref   *refs;      // 局部引用链表
-    jint       capacity;  // 局部引用容量
-    jint       count;     // 当前已用数量
-    so_jframe *prev;
-};
 
 static so_jframe *_so_jframe_global = NULL;
 static so_jframe *_so_jframe_local  = NULL;
 
-static so_jref *so_jref_new(jobject object, jobjectRefType type, so_jframe *frame) {
+static so_jref *_jref_new(jobject object, jobjectRefType type, so_jframe *frame) {
     so_jref *ref = (so_jref *)so_shared_buffer_alloc(sizeof(so_jref));
     if (!ref) return NULL;
 
@@ -35,54 +19,45 @@ static so_jref *so_jref_new(jobject object, jobjectRefType type, so_jframe *fram
 
     return ref;
 }
-
-static jint so_jref_retain(so_jref *ref) {
-    if (!ref) return JNI_EINVAL;
-
-    so_shared_buffer_retain(ref);
-    return JNI_OK;
+static void _jref_retain(so_jref *ref) {
+    return so_shared_buffer_retain(ref);
 }
 
-static int32_t so_jref_release(so_jref *ref) {
-    int32_t prev = so_shared_buffer_release(ref);
-    return prev;
+static int32_t _jref_release(so_jref *ref) {
+    return so_shared_buffer_release(ref);
 }
 
-static void so_jref_release_force(so_jref *ref) {
+static void _jref_release_force(so_jref *ref) {
     so_shared_buffer_release_force(ref);
 }
 
-jobjectRefType so_jref_get_type(so_jref *ref) {
-    if (!ref) return JNIInvalidRefType;
-
-    return ref->type;
-}
-
-jint so_jref_take_local(jobject object) {
+// 将 obj 添加到帧，不增加引用，object 需要是唯一引用才能成功
+jint JniAddLocalRef(jobject object) {
     if (!object || !_so_jframe_local) return JNI_ERR;
 
-    // 检查是否已经在本地帧里
-    so_jref *ref = so_jobject_get_ref(object);
+    // 检查是否已经在当前帧里
+    so_jref *ref = JniGetObjectRef(object);
     if (ref && ref->frame == _so_jframe_local) {
         // 已存在无需重复添加，直接返回成功
         return JNI_OK;
     }
 
-    // 唯一引用才可注册
-    jobject edit_obj = so_jobject_attempt_edit(object);
+    // 唯一引用才可添加
+    jobject edit_obj = JniAttemptEditObject(object);
     if (!edit_obj) {
         return JNI_ERR;
     }
 
     // 创建新 ref
-    so_jref *new_ref = so_jref_new(edit_obj, JNILocalRefType, _so_jframe_local);
+    so_jref *new_ref = _jref_new(edit_obj, JNILocalRefType, _so_jframe_local);
     if (!new_ref) {
         return JNI_ERR;
     }
 
-    so_jobject_set_ref(edit_obj, new_ref);
+    // 设置 obj 的 ref
+    JniSetObjectRef(edit_obj, new_ref);
 
-    // 添加到本地帧
+    // 添加 ref 到帧
     if (!_so_jframe_local->refs) {
         _so_jframe_local->refs = new_ref;
     } else {
@@ -94,38 +69,39 @@ jint so_jref_take_local(jobject object) {
     return JNI_OK;
 }
 
-jobject so_jref_new_local(jobject object) {
+jobject JniNewLocalRef(jobject object) {
     if (!object || !_so_jframe_local) return NULL;
 
-    // 检查是否已经在本地帧里
-    so_jref *ref = so_jobject_get_ref(object);
+    // 检查是否已经在当前帧里
+    so_jref *ref = JniGetObjectRef(object);
     if (ref && ref->frame == _so_jframe_local) {
         // 已存在无需重复添加，直接引用并返回原对象
-        so_jref_retain(ref);
+        _jref_retain(ref);
         return object;
     }
 
     // 获取新引用
-    jobject new_obj = so_jobject_retain(object);
+    jobject new_obj = JniRetainObject(object);
     if (!new_obj) {
         return NULL;
     }
     // 编辑新引用
-    jobject edit_obj = so_jobject_edit(new_obj);
+    jobject edit_obj = JniEditObject(new_obj);
     if (!edit_obj) {
-        so_jobject_release(new_obj);
+        JniReleaseObject(new_obj);
         return NULL;
     }
 
     // 创建新 ref
-    so_jref *new_ref = so_jref_new(edit_obj, JNILocalRefType, _so_jframe_local);
+    so_jref *new_ref = _jref_new(edit_obj, JNILocalRefType, _so_jframe_local);
     if (!new_ref) {
         return NULL;
     }
 
-    so_jobject_set_ref(edit_obj, new_ref);
+    // 设置 obj 的 ref
+    JniSetObjectRef(edit_obj, new_ref);
 
-    // 添加到本地帧
+    // 添加 ref 到帧
     if (!_so_jframe_local->refs) {
         _so_jframe_local->refs = new_ref;
     } else {
@@ -137,16 +113,16 @@ jobject so_jref_new_local(jobject object) {
     return edit_obj;
 }
 
-void so_jref_delete_local(jobject object) {
+void JniDeleteLocalRef(jobject object) {
     if (!object) return;
 
-    so_jref *ref = so_jobject_get_ref(object);
+    so_jref *ref = JniGetObjectRef(object);
     if (!ref || ref->frame != _so_jframe_local) return;
 
     so_jref *ref_prev = ref->prev;
     so_jref *ref_next = ref->next;
 
-    int32_t prev = so_jref_release(ref);
+    int32_t prev = _jref_release(ref);
     if (prev == 1) {
         // ref 被销毁了，要从 frame 里移除
         if (ref_prev) {
@@ -161,43 +137,37 @@ void so_jref_delete_local(jobject object) {
         }
 
         // 释放 object 引用
-        so_jobject_set_ref(object, NULL);
-        so_jobject_release(object);
+        JniSetObjectRef(object, NULL);
+        JniReleaseObject(object);
     }
 }
 
-jobject so_jref_new_global(jobject object) {
+jobject JniNewGlobalRef(jobject object) {
     if (!object || !_so_jframe_global) return NULL;
 
-    // 检查是否已经在全局帧里
-    so_jref *ref = so_jobject_get_ref(object);
+    so_jref *ref = JniGetObjectRef(object);
     if (ref && ref->frame == _so_jframe_global) {
-        // 已存在无需重复添加，直接引用返回原对象
-        so_jref_retain(ref);
+        _jref_retain(ref);
         return object;
     }
 
-    // 获取新引用
-    jobject new_obj = so_jobject_retain(object);
+    jobject new_obj = JniRetainObject(object);
     if (!new_obj) {
         return NULL;
     }
-    // 编辑新引用
-    jobject edit_obj = so_jobject_edit(new_obj);
+    jobject edit_obj = JniEditObject(new_obj);
     if (!edit_obj) {
-        so_jobject_release(new_obj);
+        JniReleaseObject(new_obj);
         return NULL;
     }
 
-    // 创建新 ref
-    so_jref *new_ref = so_jref_new(edit_obj, JNIGlobalRefType, _so_jframe_global);
+    so_jref *new_ref = _jref_new(edit_obj, JNIGlobalRefType, _so_jframe_global);
     if (!new_ref) {
         return NULL;
     }
 
-    so_jobject_set_ref(edit_obj, new_ref);
+    JniSetObjectRef(edit_obj, new_ref);
 
-    // 添加到全局帧
     if (!_so_jframe_global->refs) {
         _so_jframe_global->refs = new_ref;
     } else {
@@ -209,18 +179,28 @@ jobject so_jref_new_global(jobject object) {
     return edit_obj;
 }
 
-void so_jref_delete_global(jobject object) {
+jobject JniNewGlobalRefTake(jobject object) {
+    if (JniGetObjectRefType(object) == JNIGlobalRefType) {
+        return object;
+    }
+
+    jobject result = JniNewGlobalRef(object);
+    JniDeleteLocalRef(object);
+
+    return result;
+}
+
+void JniDeleteGlobalRef(jobject object) {
     if (!object) return;
 
-    so_jref *ref = so_jobject_get_ref(object);
+    so_jref *ref = JniGetObjectRef(object);
     if (!ref || ref->frame != _so_jframe_global) return;
 
     so_jref *ref_prev = ref->prev;
     so_jref *ref_next = ref->next;
 
-    int32_t prev = so_jref_release(ref);
+    int32_t prev = _jref_release(ref);
     if (prev == 1) {
-        // ref 被销毁了，要从 frame 里移除
         if (ref_prev) {
             ref_prev->next = ref_next;
         }
@@ -228,17 +208,15 @@ void so_jref_delete_global(jobject object) {
             ref_next->prev = ref_prev;
         }
         if (_so_jframe_global->refs == ref) {
-            // 更新 frame 的 refs
             _so_jframe_global->refs = ref_next;
         }
 
-        // 释放 object 引用
-        so_jobject_set_ref(object, NULL);
-        so_jobject_release(object);
+        JniSetObjectRef(object, NULL);
+        JniReleaseObject(object);
     }
 }
 
-jint so_jref_push_local_frame(jint capacity) {
+jint JniPushLocalFrame(jint capacity) {
     so_jframe *frame = (so_jframe *)malloc(sizeof(so_jframe));
     if (!frame) {
         return JNI_ERR;
@@ -253,7 +231,7 @@ jint so_jref_push_local_frame(jint capacity) {
     return JNI_OK;
 }
 
-jobject so_jref_pop_local_frame(jobject result) {
+jobject JniPopLocalFrame(jobject result) {
     so_jframe *frame = _so_jframe_local;
     if (!frame) {
         return NULL;
@@ -261,15 +239,15 @@ jobject so_jref_pop_local_frame(jobject result) {
 
     // 需要先切回上一帧，才能将 result 注册到上一帧
     _so_jframe_local  = frame->prev;
-    jobject preserved = so_jref_new_local(result);
+    jobject preserved = JniNewLocalRef(result);
 
-    // 释放本帧的所有局部引用
+    // 释放帧内的所有引用
     so_jref *ref = frame->refs;
     while (ref) {
         so_jref *next = ref->next;
-        so_jobject_set_ref(ref->obj, NULL);
-        so_jobject_release(ref->obj);
-        so_jref_release_force(ref);  // 弹帧时不管还有多少引用，强制释放 jref （虚拟引用，非真实对象）
+        JniSetObjectRef(ref->obj, NULL);
+        JniReleaseObject(ref->obj);
+        _jref_release_force(ref);  // 弹帧时不管还有多少引用，强制释放 jref （虚拟引用，非真实对象）
         ref = next;
     }
 
@@ -278,7 +256,7 @@ jobject so_jref_pop_local_frame(jobject result) {
     return preserved;
 }
 
-jint so_jref_global_init(void) {
+jint JniPushGlobalFrame(void) {
     if (_so_jframe_global) {
         return JNI_OK;  // 已经存在，全局帧只需要一个
     }
@@ -295,7 +273,7 @@ jint so_jref_global_init(void) {
     return JNI_OK;
 }
 
-void so_jref_global_fini(void) {
+void JniPopGlobalFrame(void) {
     if (!_so_jframe_global) {
         return;
     }
@@ -303,12 +281,11 @@ void so_jref_global_fini(void) {
     so_jframe *frame  = _so_jframe_global;
     _so_jframe_global = NULL;
 
-    // 释放帧内所有引用
     so_jref *ref = frame->refs;
     while (ref) {
         so_jref *next = ref->next;
-        so_jobject_release_force(ref->obj);
-        so_jref_release_force(ref);
+        JniForceReleaseObject(ref->obj);
+        _jref_release_force(ref);
         ref = next;
     }
     free(frame);

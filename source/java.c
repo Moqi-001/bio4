@@ -11,22 +11,6 @@
 #include "java/TextBitmap.h"
 #include "java/FileManager.h"
 
-jarray JniNewArray(jsize length, int type) {
-    // 创建实例
-    so_jarray *instance = so_jarray_new(length, type);
-    if (!instance) {
-        return NULL;
-    }
-    // 创建 jobject 封装（jni用）
-    jarray array = so_jobject_new(NULL, instance);
-    if (!array) {
-        so_jinstance_release(instance);
-        return NULL;
-    }
-
-    return array;
-}
-
 int soloader_java_init() {
     JSystem_class_init();
 

@@ -8,6 +8,18 @@
 #include "so_internal.h"
 #include "so_linker.h"
 
+static uint32_t _sysv_hash(const char *name) {
+    uint32_t       h = 0, g;
+    const uint8_t *p = (const uint8_t *)name;
+    while (*p) {
+        h = (h << 4) + *p++;
+        if ((g = (h & 0xf0000000)) != 0)
+            h ^= g >> 24;
+        h &= 0x0fffffff;
+    }
+    return h;
+}
+
 static void *_find_symbol_ex(so_module *mod, const char *sym_name, uint32_t sym_hash, const Elf32_Sym **out_sym) {
     if (!mod || !mod->hash || !mod->dynsym || !mod->dynstr || !sym_name) {
         return NULL;
@@ -56,7 +68,7 @@ void *so_module_find_symbol_ex(so_module *mod, const char *sym_name, int local_o
         return NULL;
     }
 
-    uint32_t sym_hash = so_sysv_hash(sym_name);
+    uint32_t sym_hash = _sysv_hash(sym_name);
 
     // 先查找本地
     void *sym_addr = _find_symbol_ex(mod, sym_name, sym_hash, out_sym);
@@ -150,7 +162,7 @@ static int _create_symtab_strtab(so_symbol *symbols, size_t num_symbols,
     return 0;
 }
 
-static uint32_t *_create_hashtab(const Elf32_Sym *symtab, size_t num_symtab, const char *strtab) {
+static uint32_t *_jclass_create_hashtab(const Elf32_Sym *symtab, size_t num_symtab, const char *strtab) {
     size_t    nbucket      = num_symtab - 1;                             // 哈希桶数量 = 实际符号数量（索引 0 是 STN_UNDEF，不计入）
     size_t    nchain       = num_symtab;                                 // 哈希链数量 = 符号表总项数（包括索引 0）
     size_t    hashtab_size = (2 + nbucket + nchain) * sizeof(uint32_t);  // 哈希表大小 = 头部(2个uint32_t) + 桶数组 + 链数组
@@ -167,7 +179,7 @@ static uint32_t *_create_hashtab(const Elf32_Sym *symtab, size_t num_symtab, con
 
     // 遍历符号表，从索引 1 开始（跳过索引 0 的 STN_UNDEF）
     for (size_t i = 1; i < num_symtab; i++) {
-        uint32_t hash       = so_sysv_hash(strtab + symtab[i].st_name);
+        uint32_t hash       = _sysv_hash(strtab + symtab[i].st_name);
         uint32_t bucket_idx = hash % nbucket;
 
         // 头插法
@@ -199,7 +211,7 @@ so_module *so_module_create(const so_library *library) {
         return NULL;
     }
 
-    mod->hash = _create_hashtab(mod->dynsym, mod->num_dynsym, mod->dynstr);
+    mod->hash = _jclass_create_hashtab(mod->dynsym, mod->num_dynsym, mod->dynstr);
     if (!mod->hash) {
         so_loge("[SOLINKER] so_module_create(%p): failed to create hashtab! ('%s')", library, library->soname);
         free(mod->dynsym);
@@ -215,6 +227,7 @@ so_module *so_module_create(const so_library *library) {
     mod->status = SO_MODULE_STATUS_INITIALIZED;
 
     so_module_retain(mod);
+    so_linker_register_module(mod);
 
     so_logd("[SOLINKER] so_module_create(%p): success! ('%s')", library, mod->soname);
     return mod;
@@ -392,6 +405,7 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
     }
 
     so_module_retain(mod);
+    so_linker_register_module(mod);
 
     so_logd("[SOLINKER] so_module_load_mem(%p,%u): success! ('%s')", buffer, size, mod->soname);
     return mod;
@@ -455,7 +469,7 @@ void so_module_unload(so_module *mod) {
         }
         if (mod->load_base) {
             so_munmap(mod->load_base);
-        } else {  
+        } else {
             // 从 so_library 创建的模块需要释放一些资源
             if (mod->dynsym) {
                 free(mod->dynsym);
@@ -765,6 +779,7 @@ so_module *so_module_open(const char *filename) {
 void so_module_close(so_module *mod) {
     if (mod) {
         so_logd("[SOLINKER] so_module_close(%p): ('%s')", mod, mod->soname);
+        so_linker_unregister_module(mod);
         so_module_fini(mod);
         so_module_unload(mod);
     }

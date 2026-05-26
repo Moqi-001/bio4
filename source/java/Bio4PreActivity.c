@@ -196,35 +196,35 @@ void Bio4PreActivity_changeStereoHard(jboolean isEnable) {
     }
 }
 
-static so_jsymbol class_symbols[] = {
+static jsymbol class_symbols[] = {
     // native 实例方法
-    SO_JSYMBOL_NATIVE("native_onCreate", "(Ljava/lang/Object;)I", &native_onCreate),
-    SO_JSYMBOL_NATIVE("native_onRestart", "()V", &native_onRestart),
-    SO_JSYMBOL_NATIVE("native_onStart", "()V", &native_onStart),
-    SO_JSYMBOL_NATIVE("native_onResume", "()V", &native_onResume),
-    SO_JSYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;II)Z", &native_onSurfaceCreated),
-    SO_JSYMBOL_NATIVE("native_onSurfaceChanged", "(Ljava/lang/Object;II)Z", &native_onSurfaceChanged),
-    SO_JSYMBOL_NATIVE("native_onDrawFrame", "(Ljava/lang/Object;)I", &native_onDrawFrame),
-    SO_JSYMBOL_NATIVE("native_onPause", "()V", &native_onPause),
-    SO_JSYMBOL_NATIVE("native_onStop", "()V", &native_onStop),
-    SO_JSYMBOL_NATIVE("native_onDestroy", "()V", &native_onDestroy),
-    SO_JSYMBOL_NATIVE("native_onConfigurationChanged", "(Ljava/lang/Object;)V", &native_onConfigurationChanged),
-    SO_JSYMBOL_NATIVE("native_onKeyDown", "(ILjava/lang/Object;)Z", &native_onKeyDown),
-    SO_JSYMBOL_NATIVE("native_onKeyUp", "(ILjava/lang/Object;)Z", &native_onKeyUp),
-    SO_JSYMBOL_NATIVE("native_onTouchEvent", "(III)Z", &native_onTouchEvent),
-    SO_JSYMBOL_NATIVE("native_setStereoHard", "(Ljava/lang/Object;Z)V", &native_setStereoHard),
-    SO_JSYMBOL_NATIVE("native_onTouchBegan", "(Ljava/lang/Object;FFFF)V", &native_onTouchBegan),
-    SO_JSYMBOL_NATIVE("native_onTouchMoved", "(Ljava/lang/Object;FFFF)V", &native_onTouchMoved),
-    SO_JSYMBOL_NATIVE("native_onTouchEnded", "(Ljava/lang/Object;FFFF)V", &native_onTouchEnded),
-    SO_JSYMBOL_NATIVE("native_onTouchCancelled", "(Ljava/lang/Object;FFFF)V", &native_onTouchCancelled),
-    SO_JSYMBOL_NATIVE("native_onShake", "()V", &native_onShake),
+    JNI_SYMBOL_NATIVE("native_onCreate", "(Ljava/lang/Object;)I", &native_onCreate),
+    JNI_SYMBOL_NATIVE("native_onRestart", "()V", &native_onRestart),
+    JNI_SYMBOL_NATIVE("native_onStart", "()V", &native_onStart),
+    JNI_SYMBOL_NATIVE("native_onResume", "()V", &native_onResume),
+    JNI_SYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;II)Z", &native_onSurfaceCreated),
+    JNI_SYMBOL_NATIVE("native_onSurfaceChanged", "(Ljava/lang/Object;II)Z", &native_onSurfaceChanged),
+    JNI_SYMBOL_NATIVE("native_onDrawFrame", "(Ljava/lang/Object;)I", &native_onDrawFrame),
+    JNI_SYMBOL_NATIVE("native_onPause", "()V", &native_onPause),
+    JNI_SYMBOL_NATIVE("native_onStop", "()V", &native_onStop),
+    JNI_SYMBOL_NATIVE("native_onDestroy", "()V", &native_onDestroy),
+    JNI_SYMBOL_NATIVE("native_onConfigurationChanged", "(Ljava/lang/Object;)V", &native_onConfigurationChanged),
+    JNI_SYMBOL_NATIVE("native_onKeyDown", "(ILjava/lang/Object;)Z", &native_onKeyDown),
+    JNI_SYMBOL_NATIVE("native_onKeyUp", "(ILjava/lang/Object;)Z", &native_onKeyUp),
+    JNI_SYMBOL_NATIVE("native_onTouchEvent", "(III)Z", &native_onTouchEvent),
+    JNI_SYMBOL_NATIVE("native_setStereoHard", "(Ljava/lang/Object;Z)V", &native_setStereoHard),
+    JNI_SYMBOL_NATIVE("native_onTouchBegan", "(Ljava/lang/Object;FFFF)V", &native_onTouchBegan),
+    JNI_SYMBOL_NATIVE("native_onTouchMoved", "(Ljava/lang/Object;FFFF)V", &native_onTouchMoved),
+    JNI_SYMBOL_NATIVE("native_onTouchEnded", "(Ljava/lang/Object;FFFF)V", &native_onTouchEnded),
+    JNI_SYMBOL_NATIVE("native_onTouchCancelled", "(Ljava/lang/Object;FFFF)V", &native_onTouchCancelled),
+    JNI_SYMBOL_NATIVE("native_onShake", "()V", &native_onShake),
 
     // 静态变量
-    SO_JSYMBOL_STATIC_FIELD("LAUNCH_HEAP", "I", &LAUNCH_HEAP),
-    SO_JSYMBOL_STATIC_FIELD("LGUARM_CHECK", "I", &LGUARM_CHECK),
+    JNI_SYMBOL_STATIC_FIELD("LAUNCH_HEAP", "I", &LAUNCH_HEAP),
+    JNI_SYMBOL_STATIC_FIELD("LGUARM_CHECK", "I", &LGUARM_CHECK),
 };
 
-static so_jclass_meta class_meta = {
+static jclassMeta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/Bio4PreActivity",
     .super_name    = NULL,
     .symbols       = class_symbols,
@@ -234,10 +234,9 @@ static so_jclass_meta class_meta = {
 
 void Bio4PreActivity_class_init() {
     // 创建 jclass
-    Bio4PreActivity_jclass = so_jclass_create(&class_meta);
-    so_jni_register_class_take(Bio4PreActivity_jclass);
+    Bio4PreActivity_jclass = JniCreateClass(&class_meta);
     // 创建 jobject
-    Bio4PreActivity_jobject = so_jclass_new_instance(Bio4PreActivity_jclass);
+    Bio4PreActivity_jobject = JniNewGlobalRefTake(JniAllocObject(Bio4PreActivity_jclass));
     // 获取实例
-    sThis = (Bio4PreActivity *)so_jobject_get_instance(Bio4PreActivity_jobject);
+    sThis = (Bio4PreActivity *)JniGetObjectInstance(Bio4PreActivity_jobject);
 }

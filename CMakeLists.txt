@@ -46,9 +46,9 @@ else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -g0 -ffast-math")
 endif()
 
-file(GLOB SO_COMMON_SRC deps/so_common/*.c)
-file(GLOB SO_LINKER_SRC deps/so_linker/*.c)
-file(GLOB SO_JNI_SRC    deps/so_jni/*.c)
+file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
+file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
+file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}

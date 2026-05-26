@@ -18,8 +18,8 @@ static jlong m_nFileLength;
 static char  m_pFilePath[1024];
 
 // static "calcInfo", "(Ljava/lang/String;)Z"
-static bool calcInfo(so_jargs *args) {  // (String pFileName)
-    const char *pFileName = JniGetStringUTFChars(SO_JARG(args, jstring));
+static bool calcInfo(jargs *args) {  // (String pFileName)
+    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
 
     snprintf(m_pFilePath, sizeof(m_pFilePath), "%s%s.png", SO_ASSETS_DIR, pFileName);
 
@@ -42,7 +42,7 @@ static bool calcInfo(so_jargs *args) {  // (String pFileName)
 
 // static, "getPackagePath", "()Ljava/lang/String;"
 static jstring getPackagePath() {
-    return JniCallNewStringUTF(m_pFilePath);
+    return JniNewStringUTF(m_pFilePath);
 }
 
 // static, "getStartOffset", "()J"
@@ -55,19 +55,19 @@ static jlong getLength() {
     return m_nFileLength;
 }
 
-static so_jsymbol class_symbols[] = {
+static jsymbol class_symbols[] = {
     // 静态变量
-    SO_JSYMBOL_STATIC_FIELD("m_nFileOffset", "J", &m_nFileOffset),
-    SO_JSYMBOL_STATIC_FIELD("m_nFileLength", "J", &m_nFileLength),
+    JNI_SYMBOL_STATIC_FIELD("m_nFileOffset", "J", &m_nFileOffset),
+    JNI_SYMBOL_STATIC_FIELD("m_nFileLength", "J", &m_nFileLength),
 
     // 静态方法
-    SO_JSYMBOL_STATIC_METHOD("calcInfo", "(Ljava/lang/String;)Z", &calcInfo),
-    SO_JSYMBOL_STATIC_METHOD("getPackagePath", "()Ljava/lang/String;", &getPackagePath),
-    SO_JSYMBOL_STATIC_METHOD("getStartOffset", "()J", &getStartOffset),
-    SO_JSYMBOL_STATIC_METHOD("getLength", "()J", &getLength),
+    JNI_SYMBOL_STATIC_METHOD("calcInfo", "(Ljava/lang/String;)Z", &calcInfo),
+    JNI_SYMBOL_STATIC_METHOD("getPackagePath", "()Ljava/lang/String;", &getPackagePath),
+    JNI_SYMBOL_STATIC_METHOD("getStartOffset", "()J", &getStartOffset),
+    JNI_SYMBOL_STATIC_METHOD("getLength", "()J", &getLength),
 };
 
-static so_jclass_meta class_meta = {
+static jclassMeta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/AssetFileInfo",
     .super_name    = NULL,
     .symbols       = class_symbols,
@@ -76,5 +76,5 @@ static so_jclass_meta class_meta = {
 };
 
 void AssetFileInfo_class_init() {
-    so_jni_register_class_from_meta(&class_meta);
+    JniCreateClass(&class_meta);
 }
