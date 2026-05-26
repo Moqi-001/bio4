@@ -144,6 +144,7 @@ static void mainLoop() {
 
         controls_poll();
         jint res = Bio4PreActivity_native_onDrawFrame(&_jni_env, Bio4PreActivity_jobject, NULL);
+        so_logd("[Bio4PreActivity] native_onDrawFrame: %d", res);
         vglSwapBuffers(GL_FALSE);
         if (res == 1) {
             Bio4PreActivity_native_setStereoHard(&_jni_env, Bio4PreActivity_jobject, sThis->m_pView, sThis->m_isStereoFlg);

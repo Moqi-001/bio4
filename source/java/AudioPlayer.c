@@ -1,5 +1,6 @@
-#include <stddef.h>
+#include <string.h>
 
+#include <so_common/so_logger.h>
 #include <so_jni/so_jni.h>
 
 #include "java.h"
@@ -16,131 +17,152 @@ typedef struct AudioPlayer {
     SoundPool         *m_pSoundPool;
 } AudioPlayer;
 
-static AudioPlayer *sInstance = NULL;
+static jclass  AudioPlayer_jclass  = NULL;
+static jobject AudioPlayer_jobject = NULL;
 
-AudioPlayer *AudioPlayer_new() {
-    AudioPlayer *player = calloc(1, sizeof(AudioPlayer));
-
-    return player;
-}
-
-static AudioPlayer *getInstance() {
-    if (!sInstance) {
-        sInstance = AudioPlayer_new();
-    }
-    return JniNewLocalRef(sInstance);
+static jobject getInstance() {
+    jobject result = JniNewLocalRef(AudioPlayer_jobject);
+    so_logd("[AudioPlayer] getInstance(): %p", result);
+    return result;
 }
 
 void AudioPlayer_ctor(AudioPlayer *thiz) {
 }
 
-// "init", "(II)Z"
-jboolean init(AudioPlayer *thiz, int nBGMNum, int nSENum) {  // (int nBGMNum, int nSENum)
-    thiz->m_nBGMNum = nBGMNum;
-    thiz->m_nSENum  = nSENum;
-    thiz->m_apBGM   = new AudioMediaPlayer[thiz->m_nBGMNum];
+// "init","(II)Z"
+jboolean init(AudioPlayer *thiz, jargs *args) {  // (int nBGMNum, int nSENum)
+    jint nBGMNum = JARG(args, jint);
+    jint nSENum  = JARG(args, jint);
 
-    for (int i = 0; i < thiz->m_nBGMNum; i++) {
-        thiz->m_apBGM[i] = new AudioMediaPlayer();
-        thiz->m_apBGM[i].create();
-    }
-
-    thiz->m_apSE = new SoundPoolData[thiz->m_nSENum];
-    for (int i2 = 0; i2 < thiz->m_nSENum; i2++) {
-        thiz->m_apSE[i2] = new SoundPoolData();
-    }
-
-    thiz->m_pSoundPool = new SoundPool(thiz->m_nSENum, 3, 0);
-
-    return JNI_TRUE;
+    jboolean result = JNI_TRUE;
+    so_logd("[AudioPlayer] init(%d,%d)", nBGMNum, nSENum);
+    return result;
 }
 
-jboolean term(AudioPlayer *thiz, int nBGMNum, int nSENum) {
-    if (thiz->m_apBGM != NULL) {
-        for (int i = 0; i < thiz->m_nBGMNum; i++) {
-            if (thiz->m_apBGM[i] != NULL) {
-                thiz->m_apBGM[i].destroy();
-            }
-            thiz->m_apBGM[i] = NULL;
-        }
-        thiz->m_apBGM = NULL;
-    }
+// "term","(II)Z"
+jboolean term(AudioPlayer *thiz, jargs *args) {  // (int nBGMNum, int nSENum)
+    jint nBGMNum = JARG(args, jint);
+    jint nSENum  = JARG(args, jint);
 
-    if (thiz->m_apSE != NULL) {
-        for (int i2 = 0; i2 < thiz->m_nSENum; i2++) {
-            if (thiz->m_pSoundPool != NULL) {
-                stopSE(i2);
-            }
-            thiz->m_apSE[i2] = NULL;
-        }
-        thiz->m_apSE = NULL;
-    }
-
-    if (thiz->m_pSoundPool != NULL) {
-        thiz->m_pSoundPool.release();
-        thiz->m_pSoundPool = NULL;
-    }
-
-    return JNI_TRUE;
+    jboolean result = JNI_TRUE;
+    so_logd("[AudioPlayer] term(%d,%d)", nBGMNum, nSENum);
+    return result;
 }
 
-jboolean loadBGM(AudioPlayer *thiz, int nSlotID, String pFileName, long nOffset, long nLength, boolean isLoop) {  // (int nSlotID, String pFileName, long nOffset, long nLength, boolean isLoop)
-    boolean isResult = thiz->m_apBGM[nSlotID].load(pFileName, nOffset, nLength, nSlotID);
-    thiz->m_apBGM[nSlotID].setLoop(isLoop);
-    return isResult;
+// "loadBGM","(ILjava/lang/String;JJZ)Z"
+jboolean loadBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID, String pFileName, long nOffset, long nLength, boolean isLoop)
+    jint        nSlotID   = JARG(args, jint);
+    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
+    jlong       nOffset   = JARG(args, jlong);
+    jlong       nLength   = JARG(args, jlong);
+    jboolean    isLoop    = JARG(args, jboolean);
+
+    jboolean result = JNI_TRUE;
+    so_logd("[AudioPlayer] loadBGM(%d,'%s',%lld,%lld,%u): %d", nSlotID, pFileName, nOffset, nLength, isLoop, result);
+    return result;
 }
 
-jboolean loadSE(AudioPlayer *thiz, int nSlotID, String pFileName, long nOffset, long nLength) {  // (int nSlotID, String pFileName, long nOffset, long nLength)
-    return thiz->m_apSE[nSlotID].load(thiz->m_pSoundPool, pFileName, nOffset, nLength);
+// "loadSE","(ILjava/lang/String;JJ)Z"
+jboolean loadSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID, String pFileName, long nOffset, long nLength)
+    jint        nSlotID   = JARG(args, jint);
+    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
+    jlong       nOffset   = JARG(args, jlong);
+    jlong       nLength   = JARG(args, jlong);
+
+    jboolean result = JNI_TRUE;
+    so_logd("[AudioPlayer] loadSE(%d,'%s',%lld,%lld): %d", nSlotID, pFileName, nOffset, nLength, result);
+
+    return result;
 }
 
-void termBGM(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apBGM[nSlotID].term();
+// "termBGM","(I)V"
+void termBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] termBGM(%d)", nSlotID);
 }
 
-void termSE(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apSE[nSlotID].term(thiz->m_pSoundPool);
+// "termSE","(I)V"
+void termSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] termSE(%d)", nSlotID);
 }
 
-void playBGM(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apBGM[nSlotID].play();
+// "playBGM","(I)V"
+void playBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] playBGM(%d)", nSlotID);
 }
 
-void playSE(AudioPlayer *thiz, int nSlotID, float i_Vol) {
-    thiz->m_apSE[nSlotID].play(thiz->m_pSoundPool, i_Vol);
+// "playSE","(IF)V"
+void playSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID, float nVolume)
+    jint   nSlotID = JARG(args, jint);
+    jfloat nVolume = JARG(args, jfloat);
+    so_logd("[AudioPlayer] playSE(%d,%f)", nSlotID, nVolume);
 }
 
-void stopBGM(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apBGM[nSlotID].stop();
+// "stopBGM","(I)V"
+void stopBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] stopBGM(%d)", nSlotID);
 }
 
-void stopSE(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apSE[nSlotID].stop(thiz->m_pSoundPool);
+// "stopSE","(I)V"
+void stopSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] stopSE(%d)", nSlotID);
 }
 
-void pauseBGM(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apBGM[nSlotID].pause();
+// "pauseBGM","(I)V"
+void pauseBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] pauseBGM(%d)", nSlotID);
 }
 
-void pauseSE(AudioPlayer *thiz, int nSlotID) {
+// "pauseSE","(I)V"
+void pauseSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] pauseSE(%d)", nSlotID);
 }
 
-void restartBGM(AudioPlayer *thiz, int nSlotID) {
-    thiz->m_apBGM[nSlotID].restart();
+// "restartBGM","(I)V"
+void restartBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] restartBGM(%d)", nSlotID);
 }
 
-void restartSE(int nSlotID) {
+// "restartSE","(I)V"
+void restartSE(AudioPlayer *thiz, jargs *args) {  // (int nSlotID)
+    jint nSlotID = JARG(args, jint);
+    so_logd("[AudioPlayer] restartSE(%d)", nSlotID);
 }
 
-void setVolumeBGM(int nSlotID, float i_Vol) {
-    if (thiz->m_apBGM[nSlotID] != NULL) {
-        thiz->m_apBGM[nSlotID].SetVolume(i_Vol);
-    }
+// "setVolumeBGM", "(IF)V"
+void setVolumeBGM(AudioPlayer *thiz, jargs *args) {  // (int nSlotID, float nVolume)
+    jint   nSlotID = JARG(args, jint);
+    jfloat nVolume = JARG(args, jfloat);
+    so_logd("[AudioPlayer] setVolumeBGM(%d,%f)", nSlotID, nVolume);
 }
 
 static jsymbol class_symbols[] = {
     // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljava/lang/String;", &getInstance),
+    JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljp/co/capcom/android/bio4_LGUplus0119/AudioPlayer;", &getInstance),
+
+    // 实例方法
+    JNI_SYMBOL_METHOD("init", "(II)Z", &init),
+    JNI_SYMBOL_METHOD("term", "(II)Z", &term),
+    JNI_SYMBOL_METHOD("loadBGM", "(ILjava/lang/String;JJZ)Z", &loadBGM),
+    JNI_SYMBOL_METHOD("loadSE", "(ILjava/lang/String;JJ)Z", &loadSE),
+    JNI_SYMBOL_METHOD("termBGM", "(ILjava/lang/String;JJZ)Z", &termBGM),
+    JNI_SYMBOL_METHOD("termSE", "(ILjava/lang/String;JJ)Z", &termSE),
+    JNI_SYMBOL_METHOD("playBGM", "(I)V", &playBGM),
+    JNI_SYMBOL_METHOD("playSE", "(IF)V", &playSE),
+    JNI_SYMBOL_METHOD("stopBGM", "(I)V", &stopBGM),
+    JNI_SYMBOL_METHOD("stopSE", "(I)V", &stopSE),
+    JNI_SYMBOL_METHOD("pauseBGM", "(I)V", &pauseBGM),
+    JNI_SYMBOL_METHOD("pauseSE", "(I)V", &pauseSE),
+    JNI_SYMBOL_METHOD("restartBGM", "(I)V", &restartBGM),
+    JNI_SYMBOL_METHOD("restartSE", "(I)V", &restartSE),
+    JNI_SYMBOL_METHOD("setVolumeBGM", "(I)V", &setVolumeBGM),
 };
 
 static jclassMeta class_meta = {
@@ -152,5 +174,6 @@ static jclassMeta class_meta = {
 };
 
 void AudioPlayer_class_init() {
-    JniCreateClass(&class_meta);
+    AudioPlayer_jclass  = JniCreateClass(&class_meta);
+    AudioPlayer_jobject = JniNewGlobalRefTake(JniAllocObject(AudioPlayer_jclass));
 }
