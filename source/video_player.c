@@ -33,6 +33,7 @@ static SceUID            audio_thid                      = -1;
 static int               audio_volume                    = MAX_AUDIO_VOLUME;
 static GLuint            gl_textures[NUM_VIDEO_BUFFERS]  = {0};
 static SceGxmTexture    *gxm_textures[NUM_VIDEO_BUFFERS] = {0};
+static int               frame_idx                       = 0;
 static GLuint            movie_fs                        = GL_NONE;
 static GLuint            movie_vs                        = GL_NONE;
 static GLuint            movie_prog                      = GL_NONE;
@@ -152,7 +153,7 @@ static int _video_open(const char *filepath, float volume) {
     init_data.basePriority                        = 0xA0;
     init_data.numOutputVideoFrameBuffers          = 3;
     init_data.autoStart                           = 1;
-    init_data.debugLevel                          = 3;
+    // init_data.debugLevel                          = 3;
 
     player_handle = sceAvPlayerInit(&init_data);
     if (!player_handle) {
@@ -204,7 +205,6 @@ static int _video_open(const char *filepath, float volume) {
 }
 
 int video_draw() {
-    int                  frame_idx = 0;
     SceAvPlayerFrameInfo frame;
 
     if (player_state == PLAYER_PAUSED || !sceAvPlayerGetVideoData(player_handle, &frame)) {
