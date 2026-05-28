@@ -114,6 +114,9 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
   vitaGL
+  freetype
+  png
+  bz2
   vitashark
   SceShaccCgExt
   taihen_stub

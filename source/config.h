@@ -10,6 +10,7 @@
 #define VITAGL_PHYCONT_THRESHOLD_MB 8
 
 #define SO_LIB_DIR    DATA_PATH
+#define TTF_PATH      DATA_PATH "font.ttf"
 #define SO_ASSETS_DIR DATA_PATH "assets/"
 #define SO_CACHE_DIR  DATA_PATH "cache/"
 
