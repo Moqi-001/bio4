@@ -17,8 +17,6 @@ static jarray *_jarray_new(jsize length, jint type) {
         return NULL;
     }
 
-    JniAddLocalRef(array);
-
     return array;
 }
 
@@ -112,8 +110,6 @@ jobjectArray JniNewObjectArray(jsize length, jclass elementClass, jobject initia
             elems[i] = JniNewLocalRef(initialElement);
         }
     }
-
-    JniAddLocalRef(array);
 
     return array;
 }

@@ -8,7 +8,7 @@ extern "C" {
 #include "../jni.h"
 #include "JavaInstance.h"
 
-typedef JavaInstance JavaBuffer;
+typedef void *JavaBuffer;
 
 JavaBuffer JavaBufferNew(jlong size);
 JavaBuffer JavaBufferNewDirect(void *address, jlong size);

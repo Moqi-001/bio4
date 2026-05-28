@@ -3,13 +3,11 @@
 
 #include "../jni.h"
 
-typedef void *JavaInstance;
-
 typedef void (*JavaDtor_t)(void *data);
 
-JavaInstance JavaInstanceNew(jsize size, JavaDtor_t dtor);
-jint         JavaInstanceRetain(JavaInstance instance);
-int32_t      JavaInstanceRelease(JavaInstance instance);
-void         JavaInstanceReleaseForce(JavaInstance instance);
+void   *JavaInstanceAlloc(jsize size, JavaDtor_t dtor);
+jint    JavaInstanceRetain(void *instance);
+int32_t JavaInstanceRelease(void *instance);
+void    JavaInstanceReleaseForce(void *instance);
 
 #endif

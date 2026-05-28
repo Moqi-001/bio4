@@ -50,7 +50,7 @@ static void _jbuffer_dtor(_JavaBuffer *buf) {
 }
 
 JavaBuffer JavaBufferNew(jlong size) {
-    _JavaBuffer *buf = (_JavaBuffer *)JavaInstanceNew(sizeof(_JavaBuffer), (JavaDtor_t)_jbuffer_dtor);
+    _JavaBuffer *buf = (_JavaBuffer *)JavaInstanceAlloc(sizeof(_JavaBuffer), (JavaDtor_t)_jbuffer_dtor);
     if (!buf) {
         return NULL;
     }
@@ -64,7 +64,7 @@ JavaBuffer JavaBufferNew(jlong size) {
 }
 
 JavaBuffer JavaBufferNewDirect(void *address, jlong size) {
-    _JavaBuffer *buf = (_JavaBuffer *)JavaInstanceNew(sizeof(_JavaBuffer), (JavaDtor_t)_jbuffer_dtor);
+    _JavaBuffer *buf = (_JavaBuffer *)JavaInstanceAlloc(sizeof(_JavaBuffer), (JavaDtor_t)_jbuffer_dtor);
     if (!buf) {
         return NULL;
     }

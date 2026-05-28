@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +10,8 @@
 
 #include "java.h"
 #include "java/lang/System.h"
+
+int *Main_nState;
 
 typedef struct JavaCall JavaCall;
 jstring (*JavaCall_callStaticStringMethod)(JavaCall *thiz, const char *name, const char *sig);
@@ -24,11 +27,19 @@ char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const c
     return result;
 }
 
+bool _mceTexture_checkSize(int width, int height) {
+    bool result = (width <= 2048 && height <= 2048 && width > 0 && height > 0 &&
+                   ((width - 1) & width) == 0 && (height & (height - 1)) == 0);
+    so_logd("[HOOK] _mceTexture_checkSize(%d,%d): %u", width, height, result);
+    return result;
+}
+
 jlong PLT_Time_GetMilliSeconds(void *thiz, jclass clazz) {  // 每帧都执行，原代码通过 JNI 查找并调用方法但不保存，hook 优化
     return JSystem_currentTimeMillis();
 }
 
 int soloader_patch_mce(so_module *mod) {
+    so_module_hook_symbol(mod, "_mceTexture_checkSize", _mceTexture_checkSize, NULL);
     return 0;
 }
 
@@ -38,7 +49,9 @@ int soloader_patch_bio4(so_module *mod) {
     so_module_hook_symbol(mod, "_ZN8PLT_Time15GetMilliSecondsEv", (void *)&PLT_Time_GetMilliSeconds, NULL);
 
     // 禁用文字显示
-    so_module_hook_symbol(mod, "_ZN3rcx4font17AD_TextTexFactory22CreateMCETextureByTextEPKwllRKNS_8graphics7Color4fES7_", so_ret_0, NULL);
+    // so_module_hook_symbol(mod, "_ZN3rcx4font17AD_TextTexFactory22CreateMCETextureByTextEPKwllRKNS_8graphics7Color4fES7_", so_ret_0, NULL);
+
+    Main_nState = so_module_find_symbol(mod, "_ZN9Bio4_Main8m_nStateE");
 
     return 0;
 }

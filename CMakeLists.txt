@@ -57,7 +57,6 @@ add_executable(${CMAKE_PROJECT_NAME}
 
   deps/so_libs/reimpl/android/log.c
   deps/so_libs/reimpl/bits/_ctype.c
-  deps/so_libs/reimpl/EGL.c
   deps/so_libs/reimpl/errno.c
   deps/so_libs/reimpl/io.c
   deps/so_libs/reimpl/mem.c
@@ -80,6 +79,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 
   source/java/android/Paint.c
   source/java/lang/System.c
+  source/java/eruption/Graphics3D.c
   source/java/AudioPlayer.c
   source/java/AssetFileInfo.c
   source/java/Bio4PreActivity.c
@@ -87,12 +87,15 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/java/FileManager.c
   source/java/StereoViewAdapter.c
   source/java/TextBitmap.c
+  source/java/Accelerometer.c
+  source/java/VideoAdapter.c
 
   source/controls.c
   source/java.c
   source/loader.c
   source/main.c
   source/patch.c
+  source/video_player.c
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
@@ -110,12 +113,12 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
-  stdc++
   vitaGL
   vitashark
   SceShaccCgExt
   taihen_stub
   SceShaccCg_stub
+  stdc++
   z
   m
   mathneon
@@ -134,6 +137,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   SceGxm_stub
   ScePower_stub
   SceVshBridge_stub
+  SceAvPlayer_stub
 )
 
 vita_create_self(eboot.bin ${CMAKE_PROJECT_NAME} UNSAFE NOASLR)

@@ -94,16 +94,18 @@ jint     JniUnregisterNatives(jclass clazz);
 jobject JniNewLocalRef(jobject object);
 void    JniDeleteLocalRef(jobject object);
 jobject JniNewGlobalRef(jobject object);
-jobject JniNewGlobalRefTake(jobject object); // 创建新全局引用并释放旧引用
+jobject JniNewGlobalRefTake(jobject object);  // 创建新全局引用并释放旧引用
 void    JniDeleteGlobalRef(jobject object);
 jint    JniPushLocalFrame(jint capacity);
 jobject JniPopLocalFrame(jobject result);
 
+void          *JniAllocInstance(jsize size);
+void          *JniGetObjectInstance(jobject object);
+jobject        JniCreateObject(jclass clazz, void *instance);
 jobject        JniAllocObject(jclass clazz);
 jobject        JniNewObject(jclass clazz, jmethodID methodID, ...);
 jobject        JniNewObjectV(jclass clazz, jmethodID methodID, va_list args);
 jobject        JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args);
-void          *JniGetObjectInstance(jobject object);
 jclass         JniGetObjectClass(jobject object);
 jboolean       JniIsSameObject(jobject ref1, jobject ref2);
 jboolean       JniIsInstanceOf(jobject obj, jclass clazz);

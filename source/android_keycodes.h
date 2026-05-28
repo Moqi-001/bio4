@@ -63,8 +63,8 @@
 #define AKEYCODE_F12 142
 
 // 系统导航键
-#define AKEYCODE_BACK       4
 #define AKEYCODE_HOME       3
+#define AKEYCODE_BACK       4
 #define AKEYCODE_MENU       82
 #define AKEYCODE_APP_SWITCH 187
 
@@ -78,13 +78,18 @@
 // 手柄按键 (BUTTON)
 #define AKEYCODE_BUTTON_A      96
 #define AKEYCODE_BUTTON_B      97
+#define AKEYCODE_BUTTON_C      98
 #define AKEYCODE_BUTTON_X      99
 #define AKEYCODE_BUTTON_Y      100
+#define AKEYCODE_BUTTON_Z      101
 #define AKEYCODE_BUTTON_L1     102
 #define AKEYCODE_BUTTON_R1     103
 #define AKEYCODE_BUTTON_L2     104
 #define AKEYCODE_BUTTON_R2     105
+#define KEYCODE_BUTTON_THUMBL  106
+#define KEYCODE_BUTTON_THUMBR  107
 #define AKEYCODE_BUTTON_START  108
 #define AKEYCODE_BUTTON_SELECT 109
+#define AKEYCODE_BUTTON_MODE   110
 
 #endif

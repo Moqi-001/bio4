@@ -21,7 +21,7 @@ enum {
     JAVA_ARRAY_TYPE_OBJECT  = 9,  // L
 };
 
-typedef JavaInstance JavaArray;
+typedef void *JavaArray;
 typedef void (*JavaElemsDtor_t)(void *elems, jsize length);
 
 JavaArray JavaArrayNew(jsize length, jint type, JavaElemsDtor_t elems_dtor);

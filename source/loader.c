@@ -109,7 +109,11 @@ int soloader_init() {
     so_logd("[LOADER] '%s' loaded: load_base=%p", so_module_name(bio4_mod), so_module_load_base(bio4_mod));
     soloader_patch_bio4(bio4_mod);
 
-    vglInitExtended(0, 960, 544, MEMORY_VITAGL_THRESHOLD_MB * 1024 * 1024, SCE_GXM_MULTISAMPLE_4X);
+    vglInitWithCustomThreshold(0, SCREEN_W, SCREEN_H,
+                               VITAGL_RAM_THRESHOLD_MB * 1024 * 1024,
+                               VITAGL_CDRAM_THRESHOLD_MB * 1024 * 1024,
+                               VITAGL_PHYCONT_THRESHOLD_MB * 1024 * 1024,
+                               0, SCE_GXM_MULTISAMPLE_4X);
 
     so_logd("[LOADER] soloader_init success!");
 

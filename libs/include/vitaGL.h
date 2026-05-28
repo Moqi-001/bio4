@@ -294,6 +294,8 @@ extern "C" {
 #define GL_POLYGON_OFFSET_FACTOR                        0x8038
 #define GL_INTENSITY                                    0x8049
 #define GL_RGB8                                         0x8051
+#define GL_RGBA4                                        0x8056
+#define GL_RGB5_A1                                      0x8057
 #define GL_RGBA8                                        0x8058
 #define GL_TEXTURE_BINDING_2D                           0x8069
 #define GL_VERTEX_ARRAY                                 0x8074
@@ -335,6 +337,8 @@ extern "C" {
 #define GL_MINOR_VERSION                                0x821C
 #define GL_NUM_EXTENSIONS                               0x821D
 #define GL_RG                                           0x8227
+#define GL_R8                                           0x8229
+#define GL_QUERY_TARGET                                 0x82EA
 #define GL_UNSIGNED_SHORT_5_6_5                         0x8363
 #define GL_UNSIGNED_SHORT_1_5_5_5_REV                   0x8366
 #define GL_UNSIGNED_INT_8_8_8_8_REV                     0x8367
@@ -413,9 +417,12 @@ extern "C" {
 #define GL_MIRROR_CLAMP_EXT                             0x8742
 #define GL_BUFFER_SIZE                                  0x8764
 #define GL_ATC_RGBA_INTERPOLATED_ALPHA_AMD              0x87EE
+#define GL_NUM_PROGRAM_BINARY_FORMATS                   0x87FE
 #define GL_RGBA16F                                      0x881A
 #define GL_BLEND_EQUATION_ALPHA                         0x883D
 #define GL_POINT_SPRITE                                 0x8861
+#define GL_QUERY_RESULT                                 0x8866
+#define GL_QUERY_RESULT_AVAILABLE                       0x8867
 #define GL_MAX_VERTEX_ATTRIBS                           0x8869
 #define GL_VERTEX_ATTRIB_ARRAY_NORMALIZED               0x886A
 #define GL_MAX_TEXTURE_COORDS                           0x8871
@@ -438,6 +445,9 @@ extern "C" {
 #define GL_DYNAMIC_READ                                 0x88E9
 #define GL_DYNAMIC_COPY                                 0x88EA
 #define GL_DEPTH24_STENCIL8                             0x88F0
+#define GL_CG_VERTEX_SHADER_EXT                         0x890E
+#define GL_CG_FRAGMENT_SHADER_EXT                       0x890F
+#define GL_SAMPLES_PASSED                               0x8914
 #define GL_SAMPLER_BINDING                              0x8919
 #define GL_UNIFORM_BUFFER                               0x8A11
 #define GL_FRAGMENT_SHADER                              0x8B30
@@ -485,6 +495,7 @@ extern "C" {
 #define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG              0x8C01
 #define GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG             0x8C02
 #define GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG             0x8C03
+#define GL_ANY_SAMPLES_PASSED                           0x8C2F
 #define GL_SRGB                                         0x8C40
 #define GL_SRGB8                                        0x8C41
 #define GL_SRGB_ALPHA                                   0x8C42
@@ -508,12 +519,15 @@ extern "C" {
 #define GL_READ_FRAMEBUFFER_BINDING                     0x8CAA
 #define GL_COLOR_ATTACHMENT0                            0x8CE0
 #define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE           0x8CD0
+#define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME           0x8CD1
 #define GL_MAX_COLOR_ATTACHMENTS                        0x8CDF
 #define GL_DEPTH_ATTACHMENT                             0x8D00
 #define GL_STENCIL_ATTACHMENT                           0x8D20
 #define GL_DEPTH_COMPONENT32F                           0x8DAB
 #define GL_DEPTH32F_STENCIL8                            0x8DAC
 #define GL_FRAMEBUFFER_SRGB                             0x8DB9
+#define GL_COMPRESSED_RED_RGTC1                         0x8DBB
+#define GL_COMPRESSED_RG_RGTC2                          0x8DBD
 #define GL_FRAMEBUFFER_COMPLETE                         0x8CD5
 #define GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT    0x8CD7
 #define GL_FRAMEBUFFER                                  0x8D40
@@ -521,6 +535,7 @@ extern "C" {
 #define GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS             0x8B4D
 #define GL_HALF_FLOAT_OES                               0x8D61
 #define GL_ETC1_RGB8_OES                                0x8D64
+#define GL_ANY_SAMPLES_PASSED_CONSERVATIVE              0x8D6A
 #define GL_SHADER_BINARY_FORMATS                        0x8DF8
 #define GL_NUM_SHADER_BINARY_FORMATS                    0x8DF9
 #define GL_SHADER_COMPILER                              0x8DFA
@@ -532,21 +547,95 @@ extern "C" {
 #define GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX 0x9049
 #define GL_COMPRESSED_RGBA_PVRTC_2BPPV2_IMG             0x9137
 #define GL_COMPRESSED_RGBA_PVRTC_4BPPV2_IMG             0x9138
+#define GL_QUERY_RESULT_NO_WAIT                         0x9194
 #define GL_COMPRESSED_RGBA8_ETC2_EAC                    0x9278
 
-#define VGL_YUV420P_NV12_BT601                       0x18E70
-#define VGL_YVU420P_NV21_BT601                       0x18E71
-#define VGL_YUV420P_NV12_BT709                       0x18E72
-#define VGL_YVU420P_NV21_BT709                       0x18E73
-#define VGL_YUV420P_BT601                            0x18E74
-#define VGL_YVU420P_BT601                            0x18E75
-#define VGL_YUV420P_BT709                            0x18E76
-#define VGL_YVU420P_BT709                            0x18E77
+#define VGL_YUV420P_NV12_BT601                         0x18E70
+#define VGL_YVU420P_NV21_BT601                         0x18E71
+#define VGL_YUV420P_NV12_BT709                         0x18E72
+#define VGL_YVU420P_NV21_BT709                         0x18E73
+#define VGL_YUV420P_BT601                              0x18E74
+#define VGL_YVU420P_BT601                              0x18E75
+#define VGL_YUV420P_BT709                              0x18E76
+#define VGL_YVU420P_BT709                              0x18E77
 
-#define EGL_SUCCESS                                  0x3000
-#define EGL_BAD_PARAMETER                            0x300C
-#define EGL_OPENGL_ES_API                            0x30A0
-#define EGL_OPENGL_API                               0x30A2
+#define EGL_SUCCESS                                     0x3000
+#define EGL_BAD_ATTRIBUTE                               0x3004
+#define EGL_BAD_CONTEXT                                 0x3006
+#define EGL_BAD_PARAMETER                               0x300C
+#define EGL_BAD_SURFACE                                 0x300D
+#define EGL_BUFFER_SIZE                                 0x3020
+#define EGL_ALPHA_SIZE                                  0x3021
+#define EGL_BLUE_SIZE                                   0x3022
+#define EGL_GREEN_SIZE                                  0x3023
+#define EGL_RED_SIZE                                    0x3024
+#define EGL_DEPTH_SIZE                                  0x3025
+#define EGL_STENCIL_SIZE                                0x3026
+#define EGL_CONFIG_CAVEAT                               0x3027
+#define EGL_CONFIG_ID                                   0x3028
+#define EGL_LEVEL                                       0x3029
+#define EGL_MAX_PBUFFER_HEIGHT                          0x302A
+#define EGL_MAX_PBUFFER_PIXELS                          0x302B
+#define EGL_MAX_PBUFFER_WIDTH                           0x302C
+#define EGL_NATIVE_RENDERABLE                           0x302D
+#define EGL_NATIVE_VISUAL_ID                            0x302E
+#define EGL_NATIVE_VISUAL_TYPE                          0x302F
+#define EGL_SAMPLES                                     0x3031
+#define EGL_SAMPLE_BUFFERS                              0x3032
+#define EGL_SURFACE_TYPE                                0x3033
+#define EGL_TRANSPARENT_TYPE                            0x3034
+#define EGL_TRANSPARENT_BLUE_VALUE                      0x3035
+#define EGL_TRANSPARENT_GREEN_VALUE                     0x3036
+#define EGL_TRANSPARENT_RED_VALUE                       0x3037
+#define EGL_NONE                                        0x3038
+#define EGL_BIND_TO_TEXTURE_RGB                         0x3039
+#define EGL_BIND_TO_TEXTURE_RGBA                        0x303A
+#define EGL_MIN_SWAP_INTERVAL                           0x303B
+#define EGL_MAX_SWAP_INTERVAL                           0x303C
+#define EGL_LUMINANCE_SIZE                              0x303D
+#define EGL_ALPHA_MASK_SIZE                             0x303E
+#define EGL_COLOR_BUFFER_TYPE                           0x303F
+#define EGL_RENDERABLE_TYPE                             0x3040
+#define EGL_CONFORMANT                                  0x3042
+#define EGL_VENDOR                                      0x3053
+#define EGL_VERSION                                     0x3054
+#define EGL_EXTENSIONS                                  0x3055
+#define EGL_HEIGHT                                      0x3056
+#define EGL_WIDTH                                       0x3057
+#define EGL_LARGEST_PBUFFER                             0x3058
+#define EGL_TEXTURE_RGBA                                0x305E
+#define EGL_TEXTURE_2D                                  0x305F
+#define EGL_TEXTURE_FORMAT                              0x3080
+#define EGL_TEXTURE_TARGET                              0x3081
+#define EGL_MIPMAP_TEXTURE                              0x3082
+#define EGL_MIPMAP_LEVEL                                0x3083
+#define EGL_BACK_BUFFER                                 0x3084
+#define EGL_RENDER_BUFFER                               0x3086
+#define EGL_VG_COLORSPACE                               0x3087
+#define EGL_VG_ALPHA_FORMAT                             0x3088
+#define EGL_VG_COLORSPACE_LINEAR                        0x308A
+#define EGL_VG_ALPHA_FORMAT_NONPRE                      0x308B
+#define EGL_CLIENT_APIS                                 0x308D
+#define EGL_RGB_BUFFER                                  0x308E
+#define EGL_HORIZONTAL_RESOLUTION                       0x3090
+#define EGL_VERTICAL_RESOLUTION                         0x3091
+#define EGL_PIXEL_ASPECT_RATIO                          0x3092
+#define EGL_SWAP_BEHAVIOR                               0x3093
+#define EGL_BUFFER_PRESERVED                            0x3094
+#define EGL_CONTEXT_CLIENT_TYPE                         0x3097
+#define EGL_CONTEXT_CLIENT_VERSION                      0x3098
+#define EGL_MULTISAMPLE_RESOLVE                         0x3099
+#define EGL_MULTISAMPLE_RESOLVE_DEFAULT                 0x309A
+#define EGL_OPENGL_ES_API                               0x30A0
+#define EGL_OPENGL_API                                  0x30A2
+#define EGL_TIMESTAMPS_ANDROID                          0x3430
+
+#define EGL_DISPLAY_SCALING                              10000
+
+#define EGL_OPENGL_ES_BIT                               0x0001
+#define EGL_OPENGL_ES2_BIT                              0x0004
+#define EGL_WINDOW_BIT                                  0x0004
+#define EGL_OPENGL_BIT                                  0x0008
 
 #define EGL_DEFAULT_DISPLAY ((NativeDisplayType)0)
 #define EGL_NO_CONTEXT      ((EGLContext)0)
@@ -589,6 +678,7 @@ void glAlphaFunc(GLenum func, GLfloat ref);
 void glAlphaFuncx(GLenum func, GLfixed ref);
 void glAttachShader(GLuint prog, GLuint shad);
 void glBegin(GLenum mode);
+void glBeginQuery(GLenum target, GLuint id);
 void glBindAttribLocation(GLuint program, GLuint index, const GLchar *name);
 void glBindBuffer(GLenum target, GLuint buffer);
 void glBindBufferBase(GLenum target, GLuint index, GLuint buffer);
@@ -625,10 +715,14 @@ void glColor3f(GLfloat red, GLfloat green, GLfloat blue);
 void glColor3fv(const GLfloat *v);
 void glColor3ub(GLubyte red, GLubyte green, GLubyte blue);
 void glColor3ubv(const GLubyte *v);
+void glColor3us(GLushort red, GLushort green, GLushort blue);
+void glColor3usv(const GLushort *c);
 void glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 void glColor4fv(const GLfloat *v);
 void glColor4ub(GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha);
 void glColor4ubv(const GLubyte *v);
+void glColor4us(GLushort red, GLushort green, GLushort blue, GLushort alpha);
+void glColor4usv(const GLushort *c);
 void glColor4x(GLfixed red, GLfixed green, GLfixed blue, GLfixed alpha);
 void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 void glColorMaterial(GLenum face, GLenum mode);
@@ -636,22 +730,26 @@ void glColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *point
 void glColorTable(GLenum target, GLenum internalformat, GLsizei width, GLenum format, GLenum type, const GLvoid *data);
 void glCompileShader(GLuint shader);
 void glCompressedTexImage2D(GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
-void glCompressedTextureImage2D(GLuint texture, GLenum target, GLint level, GLenum internalFormat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
+void glCompressedTextureImage2D(GLuint texture, GLint level, GLenum internalFormat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void *data);
 void glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
 void glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 void glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
 void glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-void glCopyTextureImage1D(GLuint texture, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
-void glCopyTextureImage2D(GLuint texture, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-void glCopyTextureSubImage1D(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
-void glCopyTextureSubImage2D(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+void glCopyTextureImage1D(GLuint texture, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
+void glCopyTextureImage2D(GLuint texture, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+void glCopyTextureSubImage1D(GLuint texture, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
+void glCopyTextureSubImage2D(GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+void glCreateBuffers(GLsizei n, GLuint *buffers);
+void glCreateFramebuffers(GLsizei n, GLuint *framebuffers);
 GLuint glCreateProgram(void);
 GLuint glCreateShader(GLenum shaderType);
+void glCreateTextures(GLenum target, GLsizei n, GLuint *textures);
 void glCullFace(GLenum mode);
 void glDeleteBuffers(GLsizei n, const GLuint *gl_buffers);
 void glDeleteFramebuffers(GLsizei n, const GLuint *framebuffers);
 void glDeleteLists(GLuint list, GLsizei range);
 void glDeleteProgram(GLuint prog);
+void glDeleteQueries(GLsizei n, const GLuint *ids);
 void glDeleteRenderbuffers(GLsizei n, const GLuint *renderbuffers);
 void glDeleteSamplers(GLsizei n, const GLuint *smp);
 void glDeleteShader(GLuint shad);
@@ -677,6 +775,7 @@ void glEnableClientState(GLenum array);
 void glEnableVertexAttribArray(GLuint index);
 void glEnd(void);
 void glEndList(void);
+void glEndQuery(GLenum target);
 void glFinish(void);
 void glFlush(void);
 void glFlushMappedBufferRange(GLenum target, GLintptr offset, GLsizeiptr length);
@@ -697,6 +796,7 @@ void glGenBuffers(GLsizei n, GLuint *buffers);
 void glGenerateMipmap(GLenum target);
 void glGenerateTextureMipmap(GLuint target);
 void glGenFramebuffers(GLsizei n, GLuint *framebuffers);
+void glGenQueries(GLsizei n, GLuint *ids);
 GLuint glGenLists(GLsizei range);
 void glGenRenderbuffers(GLsizei n, GLuint *renderbuffers);
 void glGenSamplers(GLsizei n, GLuint *smps);
@@ -718,6 +818,7 @@ void glGetPointerv(GLenum pname, void **params);
 void glGetProgramBinary(GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary);
 void glGetProgramInfoLog(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 void glGetProgramiv(GLuint program, GLenum pname, GLint *params);
+void glGetQueryObjectiv(GLuint id, GLenum pname, GLint *params);
 void glGetShaderInfoLog(GLuint handle, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
 void glGetShaderiv(GLuint handle, GLenum pname, GLint *params);
 void glGetShaderSource(GLuint handle, GLsizei bufSize, GLsizei *length, GLchar *source);
@@ -779,8 +880,10 @@ void glMultiDrawArrays(GLenum mode, const GLint *first, const GLsizei *count, GL
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
 void glMultiTexCoord2fv(GLenum target, GLfloat *f);
 void glMultiTexCoord2i(GLenum target, GLint s, GLint t);
+void glMultMatrixd(const GLdouble *m);
 void glMultMatrixf(const GLfloat *m);
 void glMultMatrixx(const GLfixed *m);
+void glMultTransposeMatrixd(const GLdouble *m);
 void glMultTransposeMatrixf(const GLfloat *m);
 void glMultTransposeMatrixx(const GLfixed *m);
 void glNamedBufferData(GLuint buffer, GLsizei size, const void *data, GLenum usage);
@@ -830,6 +933,7 @@ void glProgramUniformMatrix4fv(GLuint program, GLint location, GLsizei count, GL
 void glPushAttrib(GLbitfield mask);
 void glPushGroupMarker(GLsizei length, const GLchar *marker);
 void glPushMatrix(void);
+void glReadBuffer(GLenum mode);
 void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data);
 void glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
 void glRecti(GLint x1, GLint y1, GLint x2, GLint y2);
@@ -845,8 +949,8 @@ void glScalef(GLfloat x, GLfloat y, GLfloat z);
 void glScalex(GLfixed x, GLfixed y, GLfixed z);
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 void glShadeModel(GLenum mode);
-void glShaderBinary(GLsizei count, const GLuint *handles, GLenum binaryFormat, const void *binary, GLsizei length); // NOTE: Uses GXP shaders
-void glShaderSource(GLuint handle, GLsizei count, const GLchar *const *string, const GLint *length); // NOTE: Uses CG shader sources
+void glShaderBinary(GLsizei count, const GLuint *handles, GLenum binaryFormat, const void *binary, GLsizei length);
+void glShaderSource(GLuint handle, GLsizei count, const GLchar *const *string, const GLint *length);
 void glStencilFunc(GLenum func, GLint ref, GLuint mask);
 void glStencilFuncSeparate(GLenum face, GLenum func, GLint ref, GLuint mask);
 void glStencilMask(GLuint mask);
@@ -871,14 +975,14 @@ void glTexParameteriv(GLenum target, GLenum pname, GLint *param);
 void glTexParameterx(GLenum target, GLenum pname, GLfixed param);
 void glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-void glTextureImage1D(GLuint texture, GLenum target, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *data);
-void glTextureImage2D(GLuint texture, GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
-void glTextureParameterf(GLuint texture, GLenum target, GLenum pname, GLfloat param);
-void glTextureParameteri(GLuint texture, GLenum target, GLenum pname, GLint param);
-void glTextureParameteriv(GLuint texture, GLenum target, GLenum pname, GLint *param);
-void glTextureParameterx(GLuint texture, GLenum target, GLenum pname, GLfixed param);
-void glTextureSubImage1D(GLuint texture, GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
-void glTextureSubImage2D(GLuint texture, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
+void glTextureImage1D(GLuint texture, GLint level, GLint internalFormat, GLsizei width, GLint border, GLenum format, GLenum type, const GLvoid *data);
+void glTextureImage2D(GLuint texture, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels);
+void glTextureParameterf(GLuint texture, GLenum pname, GLfloat param);
+void glTextureParameteri(GLuint texture, GLenum pname, GLint param);
+void glTextureParameteriv(GLuint texture, GLenum pname, GLint *param);
+void glTextureParameterx(GLuint texture, GLenum pname, GLfixed param);
+void glTextureSubImage1D(GLuint texture, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const GLvoid *pixels);
+void glTextureSubImage2D(GLuint texture, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
 void glTranslated(GLdouble x, GLdouble y, GLdouble z);
 void glTranslatef(GLfloat x, GLfloat y, GLfloat z);
 void glTranslatex(GLfixed x, GLfixed y, GLfixed z);
@@ -923,6 +1027,7 @@ void glVertexAttrib3f(GLuint index, GLfloat v0, GLfloat v1, GLfloat v2);
 void glVertexAttrib3fv(GLuint index, const GLfloat *v);
 void glVertexAttrib4f(GLuint index, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
 void glVertexAttrib4fv(GLuint index, const GLfloat *v);
+void glVertexAttribDivisor(GLuint index, GLuint divisor);
 void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void *pointer);
 void glVertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
@@ -931,35 +1036,80 @@ void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void gluBuild2DMipmaps(GLenum target, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data);
 void gluLookAt(GLdouble eyeX, GLdouble eyeY, GLdouble eyeZ, GLdouble centerX, GLdouble centerY, GLdouble centerZ, GLdouble upX, GLdouble upY, GLdouble upZ);
 void gluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, GLdouble zFar);
+GLint gluScaleImage(GLenum format, GLsizei wIn, GLsizei hIn, GLenum typeIn, const void * dataIn, GLsizei wOut, GLsizei hOut, GLenum typeOut, void* dataOut);
 
 // egl*
 EGLBoolean eglBindAPI(EGLenum api);
+EGLBoolean eglChooseConfig(EGLDisplay dpy, const EGLint *attrib_list, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+EGLContext eglCreateContext(EGLDisplay dpy, EGLConfig config, EGLContext share_context, const EGLint *attrib_list);
+EGLSurface eglCreateWindowSurface(EGLDisplay dpy, EGLConfig config, void * win, const EGLint *attrib_list);
+EGLBoolean eglDestroyContext(EGLDisplay dpy, EGLContext ctx);
+EGLBoolean eglDestroySurface(EGLDisplay dpy, EGLSurface surface);
+EGLBoolean eglGetConfigAttrib(EGLDisplay display, EGLConfig config, EGLint attribute, EGLint *value);
+EGLBoolean eglGetConfigs(EGLDisplay display, EGLConfig *configs, EGLint config_size, EGLint *num_config);
+EGLContext eglGetCurrentContext(void);
 EGLDisplay eglGetDisplay(NativeDisplayType native_display);
 EGLint eglGetError(void);
 void (*eglGetProcAddress(char const *procname))(void);
 EGLuint64 eglGetSystemTimeFrequencyNV(void);
 EGLuint64 eglGetSystemTimeNV(void);
+EGLBoolean eglInitialize(EGLDisplay dpy, EGLint *major, EGLint *minor);
+EGLBoolean eglMakeCurrent(EGLDisplay dpy, EGLSurface draw, EGLSurface read, EGLContext ctx);
 EGLenum eglQueryAPI(void);
+EGLBoolean eglQueryContext(EGLDisplay dpy, EGLContext ctx, EGLint attribute, EGLint *value);
+char const * eglQueryString(EGLDisplay display, EGLint name);
+EGLBoolean eglQuerySurface(EGLDisplay dpy, EGLSurface eglSurface, EGLint attribute, EGLint *value);
 EGLBoolean eglSwapInterval(EGLDisplay display, EGLint interval);
 EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surface);
+EGLBoolean eglTerminate(EGLDisplay dpy);
 #endif
 
 // VGL_EXT_gpu_objects_array extension
+// glColorPointer equivalent for legacy vgl* draw pipeline.
 void vglColorPointer(GLint size, GLenum type, GLsizei stride, GLuint count, const GLvoid *pointer);
+
+// Overloads the color object with a pre-GPU mapped memory block with a copy-less action for legacy vgl* draw pipeline.
 void vglColorPointerMapped(GLenum type, const GLvoid *pointer);
+
+// Performs a draw with the legacy vgl* draw pipeline.
 void vglDrawObjects(GLenum mode, GLsizei count, GLboolean implicit_wvp);
+
+// Sets up the index list to use for the subsequent legacy vgl* draw pipeline draw action.
 void vglIndexPointer(GLenum type, GLsizei stride, GLuint count, const GLvoid *pointer);
+
+// Overloads the index list with an internal progressive index buffer normally used for glDrawArrays call.
+void vglIndexPointerDefault();
+
+
+// Overloads the index list with a pre-GPU mapped memory block with a copy-less action for legacy vgl* draw pipeline.
 void vglIndexPointerMapped(const GLvoid *pointer);
+
+// glTexCoordPointer equivalent for legacy vgl* draw pipeline.
 void vglTexCoordPointer(GLint size, GLenum type, GLsizei stride, GLuint count, const GLvoid *pointer);
+
+// Overloads the texture coords object with a pre-GPU mapped memory block with a copy-less action for legacy vgl* draw pipeline.
 void vglTexCoordPointerMapped(const GLvoid *pointer);
+
+// glVertexPointer equivalent for legacy vgl* draw pipeline.
 void vglVertexPointer(GLint size, GLenum type, GLsizei stride, GLuint count, const GLvoid *pointer);
+
+// Overloads the vertex object with a pre-GPU mapped memory block with a copy-less action for legacy vgl* draw pipeline.
 void vglVertexPointerMapped(GLint size, const GLvoid *pointer);
 
 // VGL_EXT_gxp_shaders extension implementation
+// glBindAttribLocation equivalent for legacy vgl* draw pipeline.
 void vglBindAttribLocation(GLuint prog, GLuint index, const GLchar *name, const GLuint num, const GLenum type);
+
+// glBindAttribLocation equivalent for legacy vgl* draw pipeline with packed attributes support.
 GLint vglBindPackedAttribLocation(GLuint prog, const GLchar *name, const GLuint num, const GLenum type, GLuint offset, GLint stride);
+
+// glVertexAttribPointer equivalent for legacy vgl* draw pipeline.
 void vglVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, GLuint count, const GLvoid *pointer);
+
+//Overloads a vertex attrib pointer with a pre-GPU mapped memory block with a copy-less action for legacy vgl* draw pipeline.
 void vglVertexAttribPointerMapped(GLuint index, const GLvoid *pointer);
+
+// Get the compiled shader binary of a given GL shader.
 void vglGetShaderBinary(GLuint index, GLsizei bufSize, GLsizei *length, void *binary);
 
 typedef enum {
@@ -972,67 +1122,177 @@ typedef enum {
 } vglMemType;
 
 typedef enum {
-	VGL_TYPE_NONE,
-	VGL_TYPE_TEXCOORD,
-	VGL_TYPE_COLOR,
-	VGL_TYPE_FOG,
-	VGL_TYPE_CLIP
+	VGL_TYPE_NONE, // No semantic
+	VGL_TYPE_TEXCOORD, // TEXCOORD#
+	VGL_TYPE_COLOR, // COLOR#
+	VGL_TYPE_FOG, // FOG
+	VGL_TYPE_CLIP // CLP#
 } vglSemanticType;
 
 typedef enum {
-	VGL_MODE_SHADER_PAIR,
-	VGL_MODE_GLOBAL,
-	VGL_MODE_POSTPONED
+	VGL_MODE_SHADER_PAIR, // Assumes glCompileShader is always called in couple of Vertex + Fragment shaders that will then be linked in the same program. Great results if this premise is respected.
+	VGL_MODE_GLOBAL, // Uses a global semantics pool for translating shaders. Less accuracy than VGL_MODE_SHADER_PAIR but has no premise that must be respected.
+	VGL_MODE_POSTPONED // Moves shaders compilation into glLinkProgram. Best results since will always have correct shader couples for the translation for accurate semantic bindings resolution.
 } vglSemanticMode;
 
 // vgl*
+// Add a new global custom semantic binding for the GLSL translator.
 void vglAddSemanticBinding(const GLchar *const *varying, GLint index, GLenum type);
+
+// Add a new global custom semantic binding hint for the GLSL translator.
 void vglAddSemanticBindingHint(const GLchar *const *varying, GLenum type);
+
+// Alloc memory from vitaGL internal memory pools. Needs to be freed with vglFree.
 void *vglAlloc(uint32_t size, vglMemType type);
+
+// Alloc temporary memory from vitaGL internal scratch pool. Allocation is extremely fast if NO_CIRCULAR_POOL is not used. Memory lifetime is guaranteed for 3 frames.
+void *vglAllocFromScratch(size_t size);
+
+// Overloads a buffer object with a pre-GPU mapped memory block with a copy-less action.
 void vglBufferData(GLenum target, const GLvoid *data);
+
+// calloc implementation for vitaGL internal memory pools.
 void *vglCalloc(uint32_t nmember, uint32_t size);
-void vglCgShaderSource(GLuint handle, GLsizei count, const GLchar *const *string, const GLint *length);
-void vglEnd(void);
+
+// Alloc memory from vitaGL internal memory pools. If the memory pools exhausted, vitaGL will attempt to free enough memory to not fail this allocation. Needs to be freed with vglFree.
 void *vglForceAlloc(uint32_t size);
+
+// Frees a previously allocated memory block in the vitaGL internal memory pools.
 void vglFree(void *addr);
-void *vglGetFuncName(uint32_t func);
+
+// Get a GL function name given a function address.
+char *vglGetFuncName(uint32_t func);
+
+// Get the internal sceGxm texture descriptor of a GL texture.
 SceGxmTexture *vglGetGxmTexture(GLenum target);
+
+// Get a GL function address given a function name.
 void *vglGetProcAddress(const char *name);
+
+// Get the internal texture data pointer of a GL texture.
 void *vglGetTexDataPointer(GLenum target);
+
+// Simple vitaGL init function. Legacy pool size is the amount of memory to reserve to handle immediate mode usage.
 GLboolean vglInit(int legacy_pool_size);
+
+// vitaGL init function with customizable resolution, RAM threshold and MSAA setup.
 GLboolean vglInitExtended(int legacy_pool_size, int width, int height, int ram_threshold, SceGxmMultisampleMode msaa);
+
+// vitaGL init function with customizable resolution, memory pools sizes and MSAA setup.
 GLboolean vglInitWithCustomSizes(int legacy_pool_size, int width, int height, int ram_pool_size, int cdram_pool_size, int phycont_pool_size, int cdlg_pool_size, SceGxmMultisampleMode msaa);
+
+// vitaGL init function with customizable resolution, memory pools thresholds and MSAA setup.
 GLboolean vglInitWithCustomThreshold(int pool_size, int width, int height, int ram_threshold, int cdram_threshold, int phycont_threshold, int cdlg_threshold, SceGxmMultisampleMode msaa);
+
+// Mark a memory block from a vitaGL internal memory pool to be deleted as soon as GPU finishes using it.
+void vglLazyFree(void *addr);
+
+// malloc implementation for vitaGL internal memory pools.
 void *vglMalloc(uint32_t size);
+
+// malloc_usable_size implementation for vitaGL internal memory pools.
 size_t vglMallocUsableSize(void *ptr);
+
+// memalign implementation for vitaGL internal memory pools.
 void *vglMemalign(uint32_t alignment, uint32_t size);
+
+// Gets the total amount of free memory in a given internal memory pool.
 size_t vglMemFree(vglMemType type);
+
+// Gets the total amount of free and used memory in a given internal memory pool.
 size_t vglMemTotal(vglMemType type);
+
+// Replaces original texture data pointer with a new one in a GL texture.
 void vglOverloadTexDataPointer(GLenum target, void *data);
+
+// Allows to override texture format of a GL texture. Requires HAVE_UNPURE_TEXFORMATS.
 void vglOverrideTexFormat(GLenum target);
+
+// Variant of glReadPixels that uses GPU underneat to perform the readback. The passed data pointer must be GPU mapped (eg: heap memory).
+void vglReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, GLvoid *data);
+
+// realloc implementation for vitaGL internal memory pools.
 void *vglRealloc(void *ptr, uint32_t size);
+
+// Change the total memory to use for internal circular pools to use in vitaGL. Disabled with NO_CIRCULAR_POOL. Default value: 32 * 1024 * 1024.
+void vglSetCircularPoolSize(uint32_t size);
+
+// Sets the number of buffers to use for the display swapchain. Default value: 3.
+void vglSetDisplayBufferCount(int count);
+
+// Setup a callback executed everytime a new frame is sent to the display. Useful to setup a CPU rendered overlay on-screen.
 void vglSetDisplayCallback(void (*cb)(void *framebuf));
+
+// Setup the fragment ring buffer size of sceGxm. Must be called before vglInit*. Default value: SCE_GXM_DEFAULT_FRAGMENT_RING_BUFFER_SIZE.
 void vglSetFragmentBufferSize(uint32_t size);
+
+// Setup the parameter buffer size of sceGxm. Must be called before vglInit*. Default value: SCE_GXM_DEFAULT_PARAMETER_BUFFER_SIZE.
 void vglSetParamBufferSize(uint32_t size);
+
+// Change the currently used semantics binding resolution mode for the GLSL translator. Default value: VGL_MODE_POSTPONED.
 void vglSetSemanticBindingMode(GLenum mode);
+
+// Change the lifetime for a texture to be considered cacheable. Requires HAVE_TEXTURE_CACHE.
 void vglSetTextureCacheFrequency(GLuint freq);
+
+// Setup the fragment USSE ring buffer size of sceGxm. Must be called before vglInit*. Default value: SCE_GXM_DEFAULT_FRAGMENT_USSE_RING_BUFFER_SIZE.
 void vglSetUSSEBufferSize(uint32_t size);
+
+// Setup the VDM ring buffer size of sceGxm. Must be called before vglInit*. Default value: SCE_GXM_DEFAULT_VDM_RING_BUFFER_SIZE.
 void vglSetVDMBufferSize(uint32_t size);
+
+// Setup the circular pools size used for generic attribute values. There is a unique pool per vertex array object. Default values: Main: 256 * 1024, Auxiliary: 64 * 1024.
 void vglSetVertexAttribPoolSize(uint32_t main_size, uint32_t aux_size);
+
+// Setup the vertex ring buffer size of sceGxm. Must be called before vglInit*. Default value: SCE_GXM_DEFAULT_VERTEX_RING_BUFFER_SIZE.
 void vglSetVertexBufferSize(uint32_t size);
-void vglSetVertexPoolSize(uint32_t size);
+
+// Change the scenes per frame value to use for the display rendertarget. Default value: 1
+void vglSetupDisplayRenderTarget(uint8_t size);
+
+// Change the priority and affinity to use for the garbage collector thread. Must be called before vglInit*.
 void vglSetupGarbageCollector(int priority, int affinity);
+
+// Change what kind of vertex buffer objects are considered eligible for scratch memory usage in order to reduce allocation costs. Requires USE_SCRATCH_MEMORY.
 void vglSetupScratchMemory(GLboolean scratch_for_dynamic, GLboolean scratch_for_stream);
+
+// Setup the buffer sizes of the sceGxm shader patcher. Must be called before vglInit*. Default values: 1024 * 1024 each.
 void vglSetupShaderPatcher(uint32_t buffer_mem_size, uint32_t vertex_usse_mem_size, uint32_t fragment_usse_mem_size);
+
+// Change optimizations configuration for the runtime shader compiler.
 void vglSetupRuntimeShaderCompiler(shark_opt opt_level, int32_t use_fastmath, int32_t use_fastprecision, int32_t use_fastint);
+
+// Load a precompiled gxp binary to a given shader handle
+void vglShaderGxpBinary(GLsizei count, const GLuint *handles, const void *binary, GLsizei length);
+
+// Perform a display buffer swap. Equivalent of eglSwapBuffers but allows support with Common Dialog.
 void vglSwapBuffers(GLboolean has_commondialog);
+
+// Enqueue a request for display resolution change that will happen at next vglSwapBuffers call.
+GLboolean vglSwapResolution(int width, int height);
+
+// Loads the depth buffer of the currently bound renderbuffer into the currently bound GL texture.
 void vglTexImageDepthBuffer(GLenum target);
+
+// Makes vitaGL use cached memory instead of uncached memory for its internal memory pools. Must be called before vglInit*.
 void vglUseCachedMem(GLboolean use);
+
+// Makes the GLSL translator use low precision variables (eg: float -> half).
 void vglUseLowPrecision(GLboolean val);
+
+// Allows to swap between triple and double buffering. vitaGL by default uses triple buffering.
 void vglUseTripleBuffering(GLboolean usage);
+
+// Allows to set a preference on what kind of memory should be used first for certain kind of internal allocations like textures and vertex data. By default vitaGL will try to exhaust VRAM first (GL_TRUE behaviour).
 void vglUseVram(GLboolean usage);
+
+// Allows to set a preference on the kind of memory to use for the internal USSE buffers in sceGxm. By default vitaGL will not use VRAM memory.
 void vglUseVramForUSSE(GLboolean usage);
+
+// Allows vitaGL to use newlib memory once all internal mempools are exhausted. Default value: GL_TRUE.
 void vglUseExtraMem(GLboolean usage);
+
+// Simplified function to enable or disable V-Sync. For more fine granularity on the swap interval use eglSwapInterval.
 void vglWaitVblankStart(GLboolean enable);
 
 #ifdef __cplusplus

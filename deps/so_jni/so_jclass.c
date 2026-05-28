@@ -157,7 +157,8 @@ void JniClearClasses(void) {
         jclassNode *node = _so_jclass_head;
         while (node) {
             jclassNode *next = node->next;
-            JniForceReleaseObject(node->clazz);  // 会调用 _jclass_unregister 自动销毁 node
+            JniDeleteGlobalRef(node->clazz);
+            free(node);
             node = next;
         }
         _so_jclass_head = NULL;
@@ -176,7 +177,7 @@ static jint _jclass_register(jclass clazz) {
         return JNI_ENOMEM;
     }
 
-    node->clazz = clazz;
+    node->clazz = JniNewGlobalRef(clazz);
     cls->node   = node;
 
     if (!_so_jclass_head) {
@@ -206,6 +207,7 @@ static void _jclass_unregister(jclass clazz) {
         _so_jclass_head = cls->node->next;
     }
 
+    JniDeleteGlobalRef(cls);
     free(cls->node);
     cls->node = NULL;
 }
@@ -240,7 +242,7 @@ static void _jclass_dtor(JniClass *cls) {
 jclass JniCreateClass(jclassMeta *meta) {
     if (!meta || !meta->name) return NULL;
 
-    JniClass *cls = (JniClass *)JavaInstanceNew(sizeof(JniClass), (JavaDtor_t)_jclass_dtor);
+    JniClass *cls = (JniClass *)JavaInstanceAlloc(sizeof(JniClass), (JavaDtor_t)_jclass_dtor);
     if (!cls) {
         so_loge("[JNI] JniCreateClass(%p): failed to alloc a new class! ('%s')", meta, meta->name);
         return NULL;

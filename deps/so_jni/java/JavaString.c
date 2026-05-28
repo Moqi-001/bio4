@@ -285,7 +285,7 @@ static void _jstring_dtor(_JavaString *str) {
 }
 
 JavaString JavaStringNewUtf16(const jchar *utf16, jsize len) {
-    _JavaString *str = (_JavaString *)JavaInstanceNew(sizeof(_JavaString), (JavaDtor_t)_jstring_dtor);
+    _JavaString *str = (_JavaString *)JavaInstanceAlloc(sizeof(_JavaString), (JavaDtor_t)_jstring_dtor);
     if (!str) {
         return NULL;
     }
@@ -299,7 +299,7 @@ JavaString JavaStringNewUtf16(const jchar *utf16, jsize len) {
 }
 
 JavaString JavaStringNewUtf8(const char *utf8) {
-    _JavaString *str = (_JavaString *)JavaInstanceNew(sizeof(_JavaString), (JavaDtor_t)_jstring_dtor);
+    _JavaString *str = (_JavaString *)JavaInstanceAlloc(sizeof(_JavaString), (JavaDtor_t)_jstring_dtor);
     if (!str) {
         return NULL;
     }
@@ -323,7 +323,7 @@ const jchar *JavaStringRetainUtf16Chars(JavaString string) {
     return str->utf16;
 }
 
-int32_t JavaStringReleaseUtf16Chars(JavaString string,const jchar *utf16) {
+int32_t JavaStringReleaseUtf16Chars(JavaString string, const jchar *utf16) {
     _JavaString *str = JAVA_STRING_CAST(string);
     if (!str || !utf16) return -1;
 

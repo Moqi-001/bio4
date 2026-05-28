@@ -8,7 +8,7 @@ extern "C" {
 #include "../jni.h"
 #include "JavaInstance.h"
 
-typedef JavaInstance JavaString;
+typedef void *JavaString;
 
 JavaString JavaStringNewUtf16(const jchar *utf16, jsize len);
 JavaString JavaStringNewUtf8(const char *utf8);

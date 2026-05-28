@@ -13,7 +13,7 @@ typedef struct _JavaInstance {
 #define dataFromInstance(_inst) ((void *)((_inst) + 1))
 #define instanceFromData(_data) ((_JavaInstance *)(_data) - 1)
 
-JavaInstance JavaInstanceNew(jsize size, JavaDtor_t dtor) {
+void *JavaInstanceAlloc(jsize size, JavaDtor_t dtor) {
     _JavaInstance *inst = (_JavaInstance *)so_shared_buffer_alloc(sizeof(_JavaInstance) + size);
     if (!inst) {
         return NULL;
@@ -21,12 +21,12 @@ JavaInstance JavaInstanceNew(jsize size, JavaDtor_t dtor) {
 
     inst->dtor = dtor;
 
-    JavaInstance instance = (JavaInstance)dataFromInstance(inst);
+    void *instance = dataFromInstance(inst);
 
     return instance;
 }
 
-jint JavaInstanceRetain(JavaInstance instance) {
+jint JavaInstanceRetain(void *instance) {
     if (!instance) return JNI_EINVAL;
 
     _JavaInstance *inst = (_JavaInstance *)instanceFromData(instance);
@@ -35,7 +35,7 @@ jint JavaInstanceRetain(JavaInstance instance) {
     return JNI_OK;
 }
 
-int32_t JavaInstanceRelease(JavaInstance instance) {
+int32_t JavaInstanceRelease(void *instance) {
     if (!instance) return -1;
 
     _JavaInstance *inst = instanceFromData(instance);
@@ -51,7 +51,7 @@ int32_t JavaInstanceRelease(JavaInstance instance) {
     return prev;
 }
 
-void JavaInstanceReleaseForce(JavaInstance instance) {
+void JavaInstanceReleaseForce(void *instance) {
     if (!instance) return;
 
     _JavaInstance *inst = instanceFromData(instance);

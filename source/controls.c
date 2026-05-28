@@ -84,11 +84,11 @@ void controls_poll() {
         int prev_pressed = ((prev_buttons & remap[i].native) == remap[i].native);
         if (curr_pressed) {
             if (!prev_pressed)
-                native_keyDown(remap[i].mapped, NULL);
+                native_keyDown(remap[i].mapped, (jobject)remap[i].mapped);
             remap[i].repeat_count++;
         } else {
             if (prev_pressed)
-                native_keyUp(remap[i].mapped, NULL);
+                native_keyUp(remap[i].mapped, (jobject)remap[i].mapped);
             remap[i].repeat_count = 0;
         }
     }

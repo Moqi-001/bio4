@@ -17,8 +17,6 @@ jstring JniNewString(const jchar *utf16, jsize len) {
         return NULL;
     }
 
-    JniAddLocalRef(string);
-
     return string;
 }
 
@@ -64,8 +62,6 @@ jstring JniNewStringUTF(const char *utf8) {
         JavaInstanceRelease(str);
         return NULL;
     }
-
-    JniAddLocalRef(string);
 
     return string;
 }

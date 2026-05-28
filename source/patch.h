@@ -6,4 +6,6 @@
 int soloader_patch_mce(so_module *mod);
 int soloader_patch_bio4(so_module *mod);
 
+extern int *Main_nState;
+
 #endif

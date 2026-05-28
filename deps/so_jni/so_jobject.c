@@ -7,10 +7,10 @@
 #include "so_jni_internal.h"
 
 typedef struct JniObject {
-    uint32_t     magic;
-    so_jref     *ref;
-    jclass       clazz;
-    JavaInstance instance;
+    uint32_t magic;
+    JniRef  *ref;
+    jclass   clazz;
+    void    *instance;
 } JniObject;
 
 #define JNI_OBJECT_MAGIC 0xBD5D3B24  // "JniObject".hashCode()
@@ -18,20 +18,6 @@ typedef struct JniObject {
     ((JniObject *)((_o) && ((JniObject *)(_o))->magic == JNI_OBJECT_MAGIC ? (_o) : NULL))
 
 /********************* internal *********************/
-jobject JniCreateObject(jclass clazz, JavaInstance instance) {
-    JniObject *obj = (JniObject *)so_shared_buffer_alloc(sizeof(JniObject));
-    if (!obj) {
-        return NULL;
-    }
-
-    obj->magic    = JNI_OBJECT_MAGIC;
-    obj->ref      = NULL;
-    obj->clazz    = clazz;
-    obj->instance = instance;
-
-    return (jobject)obj;
-}
-
 jobject JniRetainObject(jobject object) {
     JniObject *obj = JNI_OBJECT_CAST(object);
     if (!obj) return NULL;
@@ -80,14 +66,14 @@ jobject JniAttemptEditObject(jobject object) {
     return (jobject)so_shared_buffer_attempt_edit(obj);
 }
 
-so_jref *JniGetObjectRef(jobject object) {
+JniRef *JniGetObjectRef(jobject object) {
     JniObject *obj = JNI_OBJECT_CAST(object);
     if (!obj) return NULL;
 
     return obj->ref;
 }
 
-jint JniSetObjectRef(jobject object, so_jref *ref) {
+jint JniSetObjectRef(jobject object, JniRef *ref) {
     JniObject *obj = JNI_OBJECT_CAST(object);
     if (!obj) return JNI_EINVAL;
 
@@ -96,11 +82,38 @@ jint JniSetObjectRef(jobject object, so_jref *ref) {
 }
 
 /********************* exports *********************/
+void *JniAllocInstance(jsize size) {
+    return JavaInstanceAlloc(size, NULL);
+}
+
+void *JniGetObjectInstance(jobject object) {
+    JniObject *obj = JNI_OBJECT_CAST(object);
+    if (!obj) return NULL;
+
+    return (void *)obj->instance;
+}
+
+jobject JniCreateObject(jclass clazz, void *instance) {
+    JniObject *obj = (JniObject *)so_shared_buffer_alloc(sizeof(JniObject));
+    if (!obj) {
+        return NULL;
+    }
+
+    obj->magic    = JNI_OBJECT_MAGIC;
+    obj->ref      = NULL;
+    obj->clazz    = clazz;
+    obj->instance = instance;
+
+    JniAddLocalRef(obj);
+
+    return (jobject)obj;
+}
+
 static jobject _alloc_object(jclass clazz) {
     jsize instance_size = JniGetClassInstanceSize(clazz);
     if (instance_size <= 0) return NULL;
 
-    JavaInstance instance = JavaInstanceNew(instance_size, NULL);
+    void *instance = JavaInstanceAlloc(instance_size, NULL);
     if (!instance) {
         return NULL;
     }
@@ -120,20 +133,17 @@ jobject JniAllocObject(jclass clazz) {
         return NULL;
     }
 
-    JniAddLocalRef(object);
-
     return object;
 }
 
 jobject JniNewObject(jclass clazz, jmethodID methodID, ...) {
-    jobject object = _alloc_object(clazz);
-    if (!object) {
+    const jsymbol *sym = (const jsymbol *)methodID;
+    if (sym || !sym->addr) {
         return NULL;
     }
 
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        JniReleaseObject(object);
+    jobject object = _alloc_object(clazz);
+    if (!object) {
         return NULL;
     }
 
@@ -146,20 +156,17 @@ jobject JniNewObject(jclass clazz, jmethodID methodID, ...) {
     method(JniGetObjectInstance(object), &_args);
     va_end(args);
 
-    JniAddLocalRef(object);
-
     return object;
 }
 
 jobject JniNewObjectV(jclass clazz, jmethodID methodID, va_list args) {
-    jobject object = _alloc_object(clazz);
-    if (!object) {
+    const jsymbol *sym = (const jsymbol *)methodID;
+    if (sym || !sym->addr) {
         return NULL;
     }
 
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        JniReleaseObject(object);
+    jobject object = _alloc_object(clazz);
+    if (!object) {
         return NULL;
     }
 
@@ -168,20 +175,17 @@ jobject JniNewObjectV(jclass clazz, jmethodID methodID, va_list args) {
     jargs      _args  = {.is_va = 1, .va = args, .index = 0};
     method(JniGetObjectInstance(object), &_args);
 
-    JniAddLocalRef(object);
-
     return object;
 }
 
 jobject JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args) {
-    jobject object = _alloc_object(clazz);
-    if (!object) {
+    const jsymbol *sym = (const jsymbol *)methodID;
+    if (sym || !sym->addr) {
         return NULL;
     }
 
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        JniReleaseObject(object);
+    jobject object = _alloc_object(clazz);
+    if (!object) {
         return NULL;
     }
 
@@ -190,16 +194,7 @@ jobject JniNewObjectA(jclass clazz, jmethodID methodID, const jvalue *args) {
     jargs      _args  = {.is_va = 0, .vals = args, .index = 0};
     method(JniGetObjectInstance(object), &_args);
 
-    JniAddLocalRef(object);
-
     return object;
-}
-
-void *JniGetObjectInstance(jobject object) {
-    JniObject *obj = JNI_OBJECT_CAST(object);
-    if (!obj) return NULL;
-
-    return (void *)obj->instance;
 }
 
 jclass JniGetObjectClass(jobject object) {

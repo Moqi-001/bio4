@@ -1,8 +1,6 @@
 #include <so_linker/so_linker.h>
-#include <so_common/so_logger.h>
 #include <so_common/so_utils.h>
-
-#include "reimpl/egl.h"
+#include <vitaGL.h>
 
 // ==================== libEGL.so ====================
 static so_symbol libEGL_symbols[] = {

@@ -76,7 +76,7 @@ static void _jarray_dtor(_JavaArray *arr) {
 }
 
 JavaArray JavaArrayNew(jsize length, jint type, JavaElemsDtor_t elems_dtor) {
-    _JavaArray *arr = (_JavaArray *)JavaInstanceNew(sizeof(_JavaArray), (JavaDtor_t)_jarray_dtor);
+    _JavaArray *arr = (_JavaArray *)JavaInstanceAlloc(sizeof(_JavaArray), (JavaDtor_t)_jarray_dtor);
     if (!arr) {
         return NULL;
     }

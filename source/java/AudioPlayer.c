@@ -162,7 +162,7 @@ static jsymbol class_symbols[] = {
     JNI_SYMBOL_METHOD("pauseSE", "(I)V", &pauseSE),
     JNI_SYMBOL_METHOD("restartBGM", "(I)V", &restartBGM),
     JNI_SYMBOL_METHOD("restartSE", "(I)V", &restartSE),
-    JNI_SYMBOL_METHOD("setVolumeBGM", "(I)V", &setVolumeBGM),
+    JNI_SYMBOL_METHOD("setVolumeBGM", "(IF)V", &setVolumeBGM),
 };
 
 static jclassMeta class_meta = {

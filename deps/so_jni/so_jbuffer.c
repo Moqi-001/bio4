@@ -17,8 +17,6 @@ jobject JniNewDirectByteBuffer(void *address, jlong capacity) {
         return NULL;
     }
 
-    JniAddLocalRef(buffer);
-
     return buffer;
 }
 

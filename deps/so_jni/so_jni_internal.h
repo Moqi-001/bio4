@@ -10,23 +10,23 @@ extern "C" {
 typedef struct JniObject JniObject;
 typedef struct JniClass  JniClass;
 
-typedef struct so_jframe  so_jframe;
-typedef struct so_jref    so_jref;
+typedef struct JniFrame   JniFrame;
+typedef struct JniRef     JniRef;
 typedef struct jclassNode jclassNode;
 
-struct so_jref {
+struct JniRef {
     jobjectRefType type;   // 引用类型
     jobject        obj;    // JNI 对象
-    so_jframe     *frame;  // 所属帧
-    so_jref       *prev;
-    so_jref       *next;
+    JniFrame      *frame;  // 所属帧
+    JniRef        *prev;
+    JniRef        *next;
 };
 
-struct so_jframe {
-    so_jref   *refs;      // 局部引用链表
-    jint       capacity;  // 局部引用容量
-    jint       count;     // 当前已用数量
-    so_jframe *prev;
+struct JniFrame {
+    JniRef   *refs;      // 局部引用链表
+    jint      capacity;  // 局部引用容量
+    jint      count;     // 当前已用数量
+    JniFrame *prev;
 };
 
 struct jclassNode {
@@ -41,14 +41,13 @@ jint JniPushGlobalFrame(void);
 void JniPopGlobalFrame(void);
 
 // jobject
-jobject  JniCreateObject(jclass clazz, void *instance);
-jobject  JniRetainObject(jobject object);
-int32_t  JniReleaseObject(jobject object);
-void     JniForceReleaseObject(jobject object);
-jobject  JniEditObject(jobject object);
-jobject  JniAttemptEditObject(jobject object);
-so_jref *JniGetObjectRef(jobject object);
-jint     JniSetObjectRef(jobject object, so_jref *ref);
+jobject JniRetainObject(jobject object);
+int32_t JniReleaseObject(jobject object);
+void    JniForceReleaseObject(jobject object);
+jobject JniEditObject(jobject object);
+jobject JniAttemptEditObject(jobject object);
+JniRef *JniGetObjectRef(jobject object);
+jint    JniSetObjectRef(jobject object, JniRef *ref);
 
 // jclass
 const char    *JniGetClassName(jclass clazz);
