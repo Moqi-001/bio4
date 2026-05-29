@@ -72,10 +72,11 @@ typedef struct {
     int sizeByte;
     int widText;
     int heiText;
+    int strWidth;
+    int strHeight;
     uint64_t lastAccess;
 } CachedTexture;
 
-// 缓存大小：32个纹理，PSV内存有限
 #define TEXTURE_CACHE_SIZE 32
 static CachedTexture g_texture_cache[TEXTURE_CACHE_SIZE];
 static int g_texture_cache_count = 0;
@@ -91,15 +92,6 @@ static int FixTextTextureSize(int n) {
     return p;
 }
 
-static uint32_t HashString(const char* s) {
-    uint32_t hash = 5381;
-    int c;
-    while ((c = *s++)) {
-        hash = ((hash << 5) + hash) + c;
-    }
-    return hash;
-}
-
 /* =========================
  * 缓存操作
  * ========================= */
@@ -112,7 +104,8 @@ static bool IsTextureEqual(CachedTexture* cache, const char* text, int maxW, int
 }
 
 static jbyteArray GetCachedTexture(const char* text, int maxW, int maxH, int fontSize,
-                                    int* outSizeByte, int* outWidText, int* outHeiText) {
+                                    int* outSizeByte, int* outWidText, int* outHeiText,
+                                    int* outStrWidth, int* outStrHeight) {
     pthread_mutex_lock(&g_cache_mutex);
 
     for (int i = 0; i < g_texture_cache_count; i++) {
@@ -121,6 +114,8 @@ static jbyteArray GetCachedTexture(const char* text, int maxW, int maxH, int fon
             *outSizeByte = g_texture_cache[i].sizeByte;
             *outWidText = g_texture_cache[i].widText;
             *outHeiText = g_texture_cache[i].heiText;
+            *outStrWidth = g_texture_cache[i].strWidth;
+            *outStrHeight = g_texture_cache[i].strHeight;
 
             so_logd("[TextBitmap] Cache HIT: '%s'", text);
             jbyteArray result = JniNewLocalRef(g_texture_cache[i].data);
@@ -135,10 +130,10 @@ static jbyteArray GetCachedTexture(const char* text, int maxW, int maxH, int fon
 }
 
 static void CacheTexture(const char* text, int maxW, int maxH, int fontSize,
-                         jbyteArray data, int sizeByte, int widText, int heiText) {
+                         jbyteArray data, int sizeByte, int widText, int heiText,
+                         int strWidth, int strHeight) {
     pthread_mutex_lock(&g_cache_mutex);
 
-    // LRU 淘汰：找到最旧的或者空位
     int replace_idx = -1;
     uint64_t oldest_time = ~0ULL;
 
@@ -153,7 +148,6 @@ static void CacheTexture(const char* text, int maxW, int maxH, int fontSize,
         }
     }
 
-    // 释放旧缓存
     if (replace_idx >= 0 && replace_idx < g_texture_cache_count) {
         if (g_texture_cache[replace_idx].text) {
             free(g_texture_cache[replace_idx].text);
@@ -165,7 +159,6 @@ static void CacheTexture(const char* text, int maxW, int maxH, int fontSize,
         g_texture_cache_count++;
     }
 
-    // 存入新缓存
     g_texture_cache[replace_idx].text = strdup(text);
     g_texture_cache[replace_idx].maxW = maxW;
     g_texture_cache[replace_idx].maxH = maxH;
@@ -174,6 +167,8 @@ static void CacheTexture(const char* text, int maxW, int maxH, int fontSize,
     g_texture_cache[replace_idx].sizeByte = sizeByte;
     g_texture_cache[replace_idx].widText = widText;
     g_texture_cache[replace_idx].heiText = heiText;
+    g_texture_cache[replace_idx].strWidth = strWidth;
+    g_texture_cache[replace_idx].strHeight = strHeight;
     g_texture_cache[replace_idx].lastAccess = ++g_cache_timestamp;
 
     pthread_mutex_unlock(&g_cache_mutex);
@@ -194,17 +189,54 @@ static void ClearTextureCache() {
 }
 
 /* =========================
- * UTF-8 decode
+ * UTF-8 decode（正确处理 \n 和 \r\n）
  * ========================= */
-static uint32_t* utf8_decode_safe(const char* s, int* out_len) {
-    if (!s || !out_len) return NULL;
+typedef struct {
+    uint32_t* chars;
+    int* line_breaks;
+    int len;
+} DecodedText;
+
+static DecodedText utf8_decode_with_breaks(const char* s) {
+    DecodedText result = {0};
+    if (!s) return result;
 
     int cap = strlen(s);
-    uint32_t* buf = (uint32_t*)malloc(cap * sizeof(uint32_t));
-    if (!buf) return NULL;
+    result.chars = (uint32_t*)malloc(cap * sizeof(uint32_t));
+    result.line_breaks = (int*)calloc(cap + 1, sizeof(int));
+
+    if (!result.chars || !result.line_breaks) {
+        free(result.chars);
+        free(result.line_breaks);
+        result.chars = NULL;
+        return result;
+    }
 
     int i = 0;
-    while (*s && i < cap) {
+    while (*s) {
+        if (*s == '\n') {
+            if (i > 0) {
+                result.line_breaks[i - 1] = 1;
+            } else {
+                result.line_breaks[0] = 1;
+            }
+            s++;
+            continue;
+        }
+
+        if (*s == '\r') {
+            s++;
+            if (*s == '\n') {
+                s++;
+            }
+            if (i > 0) {
+                result.line_breaks[i - 1] = 1;
+            } else {
+                result.line_breaks[0] = 1;
+            }
+            continue;
+        }
+
         uint32_t c;
         unsigned char u = (unsigned char)*s;
 
@@ -223,11 +255,11 @@ static uint32_t* utf8_decode_safe(const char* s, int* out_len) {
             c = '?';
             s++;
         }
-        buf[i++] = c;
+        result.chars[i++] = c;
     }
 
-    *out_len = i;
-    return buf;
+    result.len = i;
+    return result;
 }
 
 /* =========================
@@ -279,7 +311,6 @@ static void ClearGlyphCache() {
 static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
     pthread_mutex_lock(&g_freetype_mutex);
 
-    // 检查缓存
     for (int i = 0; i < g_glyph_cache_count; i++) {
         if (g_glyph_cache[i].code == c) {
             pthread_mutex_unlock(&g_freetype_mutex);
@@ -287,7 +318,6 @@ static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
         }
     }
 
-    // 缓存满了就清空（简化 LRU）
     if (g_glyph_cache_count >= GLYPH_CACHE_SIZE) {
         for (int i = 0; i < g_glyph_cache_count; i++) {
             if (g_glyph_cache[i].buffer) {
@@ -299,7 +329,6 @@ static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
         g_advance_lut_init = false;
     }
 
-    // 加载字形并渲染
     if (FT_Load_Char(g_face, c, FT_LOAD_RENDER)) {
         pthread_mutex_unlock(&g_freetype_mutex);
         return NULL;
@@ -308,7 +337,6 @@ static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
     FT_GlyphSlot slot = g_face->glyph;
     FT_Bitmap* bmp = &slot->bitmap;
 
-    // 复制位图数据
     unsigned char* buffer_copy = NULL;
     if (bmp->buffer && bmp->rows > 0 && bmp->width > 0) {
         buffer_copy = (unsigned char*)malloc(bmp->rows * bmp->width);
@@ -327,7 +355,6 @@ static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
     g_glyph_cache[idx].rows = bmp->rows;
     g_glyph_cache[idx].buffer = buffer_copy;
 
-    // ASCII 快速路径
     if (c < 128) {
         g_advance_lut[c] = g_glyph_cache[idx].advance;
         if (c == 0) g_advance_lut_init = true;
@@ -340,7 +367,6 @@ static CachedGlyph* GetOrLoadGlyph(uint32_t c) {
 static int GetGlyphAdvance(uint32_t c) {
     pthread_mutex_lock(&g_freetype_mutex);
 
-    // ASCII 快速路径
     if (c < 128 && g_advance_lut_init) {
         int adv = g_advance_lut[c];
         if (adv > 0) {
@@ -349,7 +375,6 @@ static int GetGlyphAdvance(uint32_t c) {
         }
     }
 
-    // 检查缓存
     for (int i = 0; i < g_glyph_cache_count; i++) {
         if (g_glyph_cache[i].code == c) {
             int adv = g_glyph_cache[i].advance;
@@ -358,7 +383,6 @@ static int GetGlyphAdvance(uint32_t c) {
         }
     }
 
-    // 临时加载（不渲染位图）
     if (FT_Load_Char(g_face, c, FT_LOAD_DEFAULT)) {
         pthread_mutex_unlock(&g_freetype_mutex);
         return m_FontSize / 2;
@@ -371,14 +395,16 @@ static int GetGlyphAdvance(uint32_t c) {
     return adv;
 }
 
-static void RenderChar(uint32_t c, int x, int y, uint32_t* buffer, int bufferWidth, int bufferHeight) {
+/* =========================
+ * 渲染字符到灰度缓冲区（直接输出灰度值，跳过 ARGB）
+ * ========================= */
+static void RenderCharToGray(uint32_t c, int x, int y, unsigned char* buffer, int bufferWidth, int bufferHeight) {
     CachedGlyph* glyph = GetOrLoadGlyph(c);
     if (!glyph || !glyph->buffer || glyph->rows == 0 || glyph->width == 0) return;
 
     int left = glyph->bitmap_left;
     int top = glyph->bitmap_top;
 
-    // 预计算边界
     int start_row = y - top;
     if (start_row < 0) start_row = 0;
     int end_row = y - top + glyph->rows;
@@ -389,12 +415,11 @@ static void RenderChar(uint32_t c, int x, int y, uint32_t* buffer, int bufferWid
     int end_col = x + left + glyph->width;
     if (end_col > bufferWidth) end_col = bufferWidth;
 
-    // 渲染
     for (int row = start_row; row < end_row; row++) {
         int src_row = row - (y - top);
         if (src_row < 0 || src_row >= glyph->rows) continue;
 
-        uint32_t* dst_row = &buffer[row * bufferWidth];
+        unsigned char* dst_row = &buffer[row * bufferWidth];
         unsigned char* src_row_data = &glyph->buffer[src_row * glyph->width];
 
         for (int col = start_col; col < end_col; col++) {
@@ -404,7 +429,8 @@ static void RenderChar(uint32_t c, int x, int y, uint32_t* buffer, int bufferWid
             unsigned char alpha = src_row_data[src_col];
             if (alpha == 0) continue;
 
-            dst_row[col] = (alpha << 24) | 0x00FFFFFF;
+            // 直接写入灰度值（alpha 本身就是亮度值）
+            dst_row[col] = alpha;
         }
     }
 }
@@ -418,7 +444,7 @@ typedef struct {
     int width;
 } TextLine;
 
-static TextLine* SplitTextToLines(uint32_t* text, int len, int maxWidth, int* lineCount) {
+static TextLine* SplitTextToLines(uint32_t* text, int* line_breaks, int len, int maxWidth, int* lineCount) {
     if (!text || len <= 0 || !lineCount) return NULL;
 
     TextLine* lines = (TextLine*)malloc(sizeof(TextLine) * 256);
@@ -427,7 +453,6 @@ static TextLine* SplitTextToLines(uint32_t* text, int len, int maxWidth, int* li
     *lineCount = 0;
     int start = 0;
 
-    // 预计算所有 advance
     int* advances = (int*)malloc(len * sizeof(int));
     if (!advances) {
         free(lines);
@@ -443,6 +468,11 @@ static TextLine* SplitTextToLines(uint32_t* text, int len, int maxWidth, int* li
         int lastChar = start;
 
         for (int i = start; i < len; i++) {
+            if (line_breaks[i] && i >= start) {
+                lastChar = i + 1;
+                break;
+            }
+
             if (lineWidth + advances[i] > maxWidth && lineWidth > 0) {
                 break;
             }
@@ -456,6 +486,8 @@ static TextLine* SplitTextToLines(uint32_t* text, int len, int maxWidth, int* li
         }
 
         int lineLen = lastChar - start;
+        if (lineLen <= 0) lineLen = 1;
+
         uint32_t* lineChars = (uint32_t*)malloc(lineLen * sizeof(uint32_t));
         if (!lineChars) {
             for (int j = 0; j < *lineCount; j++) free(lines[j].chars);
@@ -479,7 +511,7 @@ static TextLine* SplitTextToLines(uint32_t* text, int len, int maxWidth, int* li
 }
 
 /* =========================
- * 创建纹理（带缓存）
+ * 创建纹理（带缓存，居中对齐，直接输出灰度）
  * ========================= */
 static jbyteArray CreateTextBitmap(jargs *args) {
     const char *text = JniGetStringUTFChars(JARG(args, jstring), NULL);
@@ -496,14 +528,16 @@ static jbyteArray CreateTextBitmap(jargs *args) {
 
     // 先查缓存
     int cachedSizeByte = 0, cachedWidText = 0, cachedHeiText = 0;
+    int cachedStrWidth = 0, cachedStrHeight = 0;
     jbyteArray cached = GetCachedTexture(text, maxW, maxH, m_FontSize,
-                                          &cachedSizeByte, &cachedWidText, &cachedHeiText);
+                                          &cachedSizeByte, &cachedWidText, &cachedHeiText,
+                                          &cachedStrWidth, &cachedStrHeight);
     if (cached) {
         m_nSizeByte = cachedSizeByte;
         m_nWidText = cachedWidText;
         m_nHeiText = cachedHeiText;
-        m_nWidStrText = cachedWidText;
-        m_nHeiStrText = cachedHeiText;
+        m_nWidStrText = cachedStrWidth;
+        m_nHeiStrText = cachedStrHeight;
         return cached;
     }
 
@@ -516,18 +550,20 @@ static jbyteArray CreateTextBitmap(jargs *args) {
 
     FT_Set_Pixel_Sizes(g_face, 0, m_FontSize);
 
-    // UTF-8 解码
-    int ulen = 0;
-    uint32_t* utext = utf8_decode_safe(text, &ulen);
-    if (!utext || ulen == 0) {
-        if (utext) free(utext);
+    // UTF-8 解码，同时获取换行信息
+    DecodedText decoded = utf8_decode_with_breaks(text);
+    if (!decoded.chars || decoded.len == 0) {
+        if (decoded.chars) free(decoded.chars);
+        if (decoded.line_breaks) free(decoded.line_breaks);
         return NULL;
     }
 
     // 分行
     int lineCount = 0;
-    TextLine* lines = SplitTextToLines(utext, ulen, maxW, &lineCount);
-    free(utext);
+    TextLine* lines = SplitTextToLines(decoded.chars, decoded.line_breaks, decoded.len, maxW, &lineCount);
+
+    free(decoded.chars);
+    free(decoded.line_breaks);
 
     if (!lines || lineCount == 0) {
         if (lines) free(lines);
@@ -540,12 +576,18 @@ static jbyteArray CreateTextBitmap(jargs *args) {
     if (lineHeight <= 0) lineHeight = m_FontSize;
     if (baseline <= 0) baseline = m_FontSize;
 
+    // 计算每行宽度和最大宽度
+    int* lineWidths = (int*)malloc(lineCount * sizeof(int));
     int maxTextWidth = 0;
     for (int i = 0; i < lineCount; i++) {
-        if (lines[i].width > maxTextWidth) maxTextWidth = lines[i].width;
+        lineWidths[i] = lines[i].width;
+        if (lineWidths[i] > maxTextWidth) maxTextWidth = lineWidths[i];
     }
-    if (maxTextWidth > maxW) maxTextWidth = maxW;
-    if (maxTextWidth <= 0) maxTextWidth = m_FontSize * 2;
+
+    // 限制最大宽度
+    int finalTextWidth = maxTextWidth;
+    if (finalTextWidth > maxW) finalTextWidth = maxW;
+    if (finalTextWidth <= 0) finalTextWidth = m_FontSize * 2;
 
     int totalTextHeight = lineHeight * lineCount;
     if (totalTextHeight <= 0) totalTextHeight = m_FontSize;
@@ -556,41 +598,47 @@ static jbyteArray CreateTextBitmap(jargs *args) {
     }
 
     // 纹理尺寸（2的幂）
-    int texWidth = FixTextTextureSize(maxTextWidth);
+    int texWidth = FixTextTextureSize(finalTextWidth);
     int texHeight = FixTextTextureSize(totalTextHeight);
     int sizeByte = texWidth * texHeight;
 
-    // 分配并渲染
-    uint32_t* img = (uint32_t*)calloc(texWidth * texHeight, sizeof(uint32_t));
-    if (!img) {
+    // 分配灰度缓冲区（1字节/像素，而不是4字节）
+    unsigned char* grayImg = (unsigned char*)calloc(texWidth * texHeight, 1);
+    if (!grayImg) {
+        free(lineWidths);
         for (int i = 0; i < lineCount; i++) free(lines[i].chars);
         free(lines);
         return NULL;
     }
 
+    // 渲染每一行（居中对齐，直接输出灰度）
     for (int i = 0; i < lineCount; i++) {
-        int x = 0;
+        // 计算居中对齐的 X 偏移
+        int x_offset = (finalTextWidth - lineWidths[i]) / 2;
+        int current_x = x_offset;
+
         int y = baseline + (i * lineHeight);
+
         for (int j = 0; j < lines[i].length; j++) {
-            RenderChar(lines[i].chars[j], x, y, img, texWidth, texHeight);
-            x += GetGlyphAdvance(lines[i].chars[j]);
+            RenderCharToGray(lines[i].chars[j], current_x, y, grayImg, texWidth, texHeight);
+            current_x += GetGlyphAdvance(lines[i].chars[j]);
         }
     }
 
-    // 转换为字节数组（只取 Alpha）
+    // 直接返回灰度字节数组（无需转换）
     jbyteArray result = JniNewByteArray(sizeByte);
     if (result) {
         jbyte* byteData = JniGetByteArrayElements(result, NULL);
         if (byteData) {
-            for (int i = 0; i < sizeByte; i++) {
-                byteData[i] = (jbyte)((img[i] >> 24) & 0xFF);
-            }
+            // 直接复制灰度数据
+            memcpy(byteData, grayImg, sizeByte);
             JniReleaseByteArrayElements(result, byteData, 0);
         }
     }
 
     // 清理
-    free(img);
+    free(grayImg);
+    free(lineWidths);
     for (int i = 0; i < lineCount; i++) {
         free(lines[i].chars);
     }
@@ -600,12 +648,14 @@ static jbyteArray CreateTextBitmap(jargs *args) {
     m_nSizeByte = sizeByte;
     m_nWidText = texWidth;
     m_nHeiText = texHeight;
-    m_nWidStrText = maxTextWidth;
+    m_nWidStrText = finalTextWidth;
     m_nHeiStrText = totalTextHeight;
 
-    CacheTexture(text, maxW, maxH, m_FontSize, result, sizeByte, texWidth, texHeight);
+    CacheTexture(text, maxW, maxH, m_FontSize, result, sizeByte, texWidth, texHeight,
+                 finalTextWidth, totalTextHeight);
 
-    so_logd("[TextBitmap] Created: %dx%d, size=%d, lines=%d", texWidth, texHeight, sizeByte, lineCount);
+    so_logd("[TextBitmap] Created (grayscale): %dx%d, size=%d, lines=%d, textWidth=%d",
+            texWidth, texHeight, sizeByte, lineCount, finalTextWidth);
 
     return result;
 }
@@ -676,7 +726,6 @@ static jint SetupFontSize(jargs *args) {
     }
     FT_Set_Pixel_Sizes(g_face, 0, m_FontSize);
 
-    // 字体大小改变，清空所有缓存
     if (oldSize != m_FontSize) {
         ClearTextureCache();
         ClearGlyphCache();
