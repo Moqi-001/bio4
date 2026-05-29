@@ -196,8 +196,10 @@ static void *se_thread_func(void *arg) {
     int channels    = info.channels;
     int sample_rate = info.sample_rate;
 
+    so_logd("[SE] Original: channels=%d sample_rate=%d", channels, sample_rate);
+
     p->audio_port = sceAudioOutOpenPort(
-            SCE_AUDIO_OUT_PORT_TYPE_BGM,
+            SCE_AUDIO_OUT_PORT_TYPE_VOICE,
             1024,
             sample_rate,
             channels == 1
@@ -205,6 +207,8 @@ static void *se_thread_func(void *arg) {
             : SCE_AUDIO_OUT_MODE_STEREO);
 
     if (p->audio_port < 0) {
+        so_loge("SE: sceAudioOutOpenPort failed with error: 0x%08X", p->audio_port);
+        so_loge("SE: channels=%d, sample_rate=%d", channels, sample_rate);
         stb_vorbis_close(vorbis);
         p->playing = 0;
         return NULL;
@@ -233,9 +237,7 @@ static void *se_thread_func(void *arg) {
     }
 
     sceAudioOutReleasePort(p->audio_port);
-
     stb_vorbis_close(vorbis);
-
     p->playing = 0;
 
     return NULL;
