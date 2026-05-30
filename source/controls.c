@@ -64,11 +64,12 @@ static ButtonToTouch btn2touch[] = {
     {SCE_CTRL_CIRCLE,   866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
     {SCE_CTRL_SQUARE,   776.0f, 332.0f, {0, -1, -1, -1, -1}}, // 开门/拾取
     {SCE_CTRL_TRIANGLE, 814.0f, 450.0f, {0, -1, -1, -1, -1}}, // 菜刀
-    {SCE_CTRL_LTRIGGER, 866.0f, 240.0f, {0, -1, -1, -1, -1}}, // 开枪
-    {SCE_CTRL_RTRIGGER, 866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 切换为行走状态
+    {SCE_CTRL_LTRIGGER, 866.0f, 240.0f, {0, -1, -1, -1, -1}}, // 切换为行走状态
+    {SCE_CTRL_RTRIGGER, 866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
     {SCE_CTRL_START,    92.0f,  146.0f, {0, -1, -1, -1, -1}}, // 说明
     {SCE_CTRL_SELECT,   62.0f,  48.0f,  {0, -1, -1, -1, -1}}, // 菜单
 };
+
 
 #define native_touchDown(pTouchInfo, currX, currY, prevX, prevY) \
     Bio4PreActivity_native_onTouchBegan(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
