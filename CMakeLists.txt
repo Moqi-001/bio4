@@ -79,7 +79,6 @@ add_executable(${CMAKE_PROJECT_NAME}
   source/utils/dialog.c
   source/utils/utils.c
 
-  source/java/android/Paint.c
   source/java/lang/System.c
   source/java/AudioPlayer.c
   source/java/AssetFileInfo.c

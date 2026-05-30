@@ -61,11 +61,6 @@ static int init_needed_modules() {
     return 0;
 }
 
-static int main_thread(SceSize args, void *argp) {
-    sceKernelExitThread(0);
-    return 0;
-}
-
 so_module *soloader_load_library(const char *soname) {
     char path[1024];
     snprintf(path, 1024, "%slib%s.so", SO_LIB_DIR, soname);
@@ -106,7 +101,6 @@ int soloader_init() {
     soloader_patch_mce(mce_mod);
 
     bio4_mod = soloader_load_library("bio4af");
-    so_logd("[LOADER] '%s' loaded: load_base=%p", so_module_name(bio4_mod), so_module_load_base(bio4_mod));
     soloader_patch_bio4(bio4_mod);
 
     vglInitWithCustomThreshold(0, SCREEN_W, SCREEN_H,

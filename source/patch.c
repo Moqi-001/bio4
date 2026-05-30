@@ -11,12 +11,10 @@
 #include "java.h"
 #include "java/lang/System.h"
 
-int *Main_nState;
-
 typedef struct JavaCall JavaCall;
 jstring (*JavaCall_callStaticStringMethod)(JavaCall *thiz, const char *name, const char *sig);
 
-char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const char *sig, ...) {
+char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const char *sig, ...) { // 原函数有 bug
     jstring     str    = JavaCall_callStaticStringMethod(thiz, name, sig);
     const char *utf8   = JniGetStringUTFChars(str, NULL);
     size_t      len    = strlen(utf8);
@@ -39,8 +37,6 @@ int soloader_patch_bio4(so_module *mod) {
     JavaCall_callStaticStringMethod = so_module_find_symbol(mod, "_ZN8JavaCall22callStaticStringMethodEPKcS1_z");
     so_module_hook_symbol(mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z", (void *)&JavaCall_callStaticCharPtrMethod, NULL);
     so_module_hook_symbol(mod, "_ZN8PLT_Time15GetMilliSecondsEv", (void *)&PLT_Time_GetMilliSeconds, NULL);
-
-    Main_nState = so_module_find_symbol(mod, "_ZN9Bio4_Main8m_nStateE");
 
     return 0;
 }
