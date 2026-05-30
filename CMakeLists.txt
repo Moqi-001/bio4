@@ -6,14 +6,14 @@ endif ()
 
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VITASDK}/share/vita.toolchain.cmake" CACHE PATH "Toolchain file")
 
-project(Bio4 C CXX)
+project(BIOHAZARD4 C CXX)
 
 include("${VITASDK}/share/vita.cmake" REQUIRED)
 
 # Vita application configuration
-set(VITA_APP_NAME "Resident Evil 4: Mobile Edition")
+set(VITA_APP_NAME "BIOHAZARD 4 - Mobile Edition")
 set(VITA_TITLEID "BIO4AF000")
-set(VITA_VPKNAME "Bio4")
+set(VITA_VPKNAME "BIOHAZARD4")
 set(VITA_VERSION "01.00")
 set(VITA_MKSFOEX_FLAGS "-d ATTRIBUTE2=12")
 
