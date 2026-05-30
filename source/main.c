@@ -6,6 +6,7 @@
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/power.h>
+#include <psp2/sysmodule.h>
 #include <psp2/touch.h>
 
 #include "config.h"
@@ -32,6 +33,8 @@ int main(int argc, char *argv[]) {
     scePowerSetBusClockFrequency(222);
     scePowerSetGpuClockFrequency(222);
     scePowerSetGpuXbarClockFrequency(166);
+
+    sceSysmoduleLoadModule(SCE_SYSMODULE_AVPLAYER);
 
 #ifdef LOG_PATH
     sceIoRemove(LOG_PATH);

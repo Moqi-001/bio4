@@ -53,7 +53,7 @@ void so_log_printf(int t, const char *fmt, ...) {
             prefix = "[FATAL] ";
             break;
         case SO_LT_TEMP:
-            prefix = "[=TEMP=] ";
+            prefix = "[*TEMP*] ";
             break;
         default:
             break;

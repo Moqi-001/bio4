@@ -5,9 +5,9 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/touch.h>
 
+#include "android/keycodes.h"
 #include "java/Bio4PreActivity.h"
 
-#include "android_keycodes.h"
 #include "config.h"
 
 typedef struct {
@@ -62,9 +62,9 @@ void controls_poll() {
         {-1, -1, -1, -1, -1},
         {-1, -1, -1, -1, -1},
     };
+
     SceCtrlData  pad;
     SceTouchData touch;
-
     sceCtrlPeekBufferPositive(0, &pad, 1);
     sceTouchPeek(SCE_TOUCH_PORT_FRONT, &touch, 1);
 

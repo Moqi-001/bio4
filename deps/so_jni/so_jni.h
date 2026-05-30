@@ -174,7 +174,7 @@ void  JniSetDoubleArrayRegion(jdoubleArray array, jsize start, jsize len, const 
 void *JniGetPrimitiveArrayCritical(jarray array, jboolean *isCopy);
 void  JniReleasePrimitiveArrayCritical(jarray array, void *carray, jint mode);
 
-jobject        JniNewDirectByteBuffer(void *address, jlong size);
+jobject        JniNewDirectByteBuffer(void *address, jlong capacity);
 void          *JniGetDirectBufferAddress(jobject buffer);
 jlong          JniGetDirectBufferCapacity(jobject buffer);
 jobjectRefType JniGetObjectRefType(jobject object);

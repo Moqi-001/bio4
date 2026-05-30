@@ -8,7 +8,6 @@
 #include <psp2/gxm.h>
 #include <psp2/kernel/sysmem.h>
 #include <psp2/kernel/threadmgr.h>
-#include <psp2/sysmodule.h>
 #include <psp2/touch.h>
 #include <so_common/so_logger.h>
 #include <vitaGL.h>
@@ -140,8 +139,6 @@ static void _video_close() {
 }
 
 static int _video_open(const char *filepath, float volume) {
-    sceSysmoduleLoadModule(SCE_SYSMODULE_AVPLAYER);
-
     audio_volume = volume * MAX_AUDIO_VOLUME;
 
     SceAvPlayerInitData init_data;

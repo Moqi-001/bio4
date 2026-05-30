@@ -49,11 +49,13 @@ endif()
 file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
 file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c)
+file(GLOB_RECURSE SO_FONT_SRC   deps/so_font/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}
   ${SO_LINKER_SRC}
   ${SO_JNI_SRC}
+  ${SO_FONT_SRC}
 
   deps/so_libs/reimpl/android/log.c
   deps/so_libs/reimpl/bits/_ctype.c
@@ -79,7 +81,6 @@ add_executable(${CMAKE_PROJECT_NAME}
 
   source/java/android/Paint.c
   source/java/lang/System.c
-  source/java/eruption/Graphics3D.c
   source/java/AudioPlayer.c
   source/java/AssetFileInfo.c
   source/java/Bio4PreActivity.c
@@ -100,6 +101,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
   PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
+  PUBLIC ${CMAKE_SOURCE_DIR}/libs/include/freetype2
   PUBLIC ${CMAKE_SOURCE_DIR}/deps
 )
 
@@ -114,18 +116,18 @@ target_link_directories (${CMAKE_PROJECT_NAME}
 target_link_libraries(${CMAKE_PROJECT_NAME}
   -Wl,--whole-archive pthread -Wl,--no-whole-archive
   vitaGL
-  freetype
-  png
-  bz2
   vitashark
   SceShaccCgExt
   taihen_stub
   SceShaccCg_stub
-  stdc++
+  kubridge_stub
+  mathneon
+  freetype
+  png
+  bz2
   z
   m
-  mathneon
-  kubridge_stub
+  stdc++
   SceHid_stub
   SceCtrl_stub
   SceTouch_stub
@@ -149,6 +151,7 @@ vita_create_vpk(${VITA_VPKNAME}.vpk ${VITA_TITLEID} eboot.bin
   NAME ${VITA_APP_NAME}
   FILE ${CMAKE_SOURCE_DIR}/resources/cpuinfo cpuinfo
   FILE ${CMAKE_SOURCE_DIR}/resources/meminfo meminfo
+  FILE ${CMAKE_SOURCE_DIR}/resources/font.ttf font.ttf
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/icon0.png sce_sys/icon0.png
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/pic0.png sce_sys/pic0.png
   FILE ${CMAKE_SOURCE_DIR}/resources/livearea/startup.png sce_sys/livearea/contents/startup.png

@@ -2,7 +2,6 @@
 
 #include <so_jni/so_jni.h>
 
-#include "java/eruption/Graphics3D.h"
 #include "java/lang/System.h"
 
 #include "java/Accelerometer.h"
@@ -18,7 +17,6 @@
 int soloader_java_init() {
     JSystem_class_init();
 
-    Graphics3D_class_init();
     Accelerometer_class_init();
     AssetFileInfo_class_init();
     AudioPlayer_class_init();

@@ -31,7 +31,6 @@ struct so_module {
     void *cookie;     // 容器标记（不透明指针，由 context 管理）
 
     char *soname;  // 共享对象名称
-    char *sopath;  // 完整文件路径
 
     void  *load_base;  // 内存块基址
     size_t load_size;  // 内存块大小

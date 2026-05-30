@@ -27,7 +27,7 @@ static jsize _utf8_to_utf16_length(const char *utf8, jsize utf8_len) {
     const unsigned char *end       = p + utf8_len;
 
     while (p < end) {
-        if (*p < 0x80) {  // 1字节 ASCII
+        if ((*p & 0x80) == 0) {  // 1字节 ASCII
             utf16_len++;
             p += 1;
         } else if ((*p & 0xE0) == 0xC0) {  // 2字节 UTF-8
@@ -81,7 +81,7 @@ static void _utf8_to_utf16(const char *utf8, jsize utf8_len, jchar *utf16_out) {
     const unsigned char *end = p + utf8_len;
 
     while (p < end) {
-        if (*p < 0x80) {
+        if ((*p & 0x80) == 0) {
             *utf16_out++ = *p++;
         } else if ((*p & 0xE0) == 0xC0) {
             if (p + 1 < end) {
