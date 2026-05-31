@@ -8,7 +8,6 @@
 #include <sys/time.h>
 
 #include <psp2/io/stat.h>
-#include <sha1/sha1.h>
 #include <so_common/so_logger.h>
 
 #include "utils/utils.h"
@@ -185,24 +184,6 @@ size_t file_size(const char *path) {
     return ret;
 }
 
-char *file_sha1sum(const char *path) {
-    uint8_t *buffer;
-    size_t   size;
-
-    if (!file_load(path, &buffer, &size)) {
-        so_loge(
-            "file_sha1sum: Failed to read data from "
-            "the source path \"%s\".",
-            path);
-        return NULL;
-    }
-
-    char *ret = str_sha1sum((const char *)buffer, size);
-
-    free(buffer);
-    return ret;
-}
-
 bool is_dir(const char *path) {
     DIR *d = opendir(path);
 
@@ -311,28 +292,4 @@ bool str_ends_with(const char *str, const char *suffix) {
 
     return (str_len >= suffix_len) &&
            (0 == strcmp(str + (str_len - suffix_len), suffix));
-}
-
-char *str_sha1sum(const char *str, size_t size) {
-    if (size == 0) {
-        size = strlen(str);
-    }
-
-    uint8_t  sha1[20];
-    SHA1_CTX ctx;
-    sha1_init(&ctx);
-    sha1_update(&ctx, (uint8_t *)str, size);
-    sha1_final(&ctx, (uint8_t *)sha1);
-
-    char hash[42];
-    memset(hash, 0, sizeof(hash));
-
-    for (int i = 0; i < 20; i++) {
-        char string[4];
-        sprintf(string, "%02X", sha1[i]);
-        strcat(hash, string);
-    }
-
-    hash[41] = '\0';
-    return strdup(hash);
 }

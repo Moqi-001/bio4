@@ -50,20 +50,16 @@ file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
 file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c)
 file(GLOB_RECURSE SO_FONT_SRC   deps/so_font/*.c)
+file(GLOB_RECURSE SO_BIONIC_SRC deps/so_libs/reimpl/bionic/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}
   ${SO_LINKER_SRC}
   ${SO_JNI_SRC}
   ${SO_FONT_SRC}
+  ${SO_BIONIC_SRC}
 
   deps/so_libs/reimpl/android/log.c
-  deps/so_libs/reimpl/bits/_ctype.c
-  deps/so_libs/reimpl/errno.c
-  deps/so_libs/reimpl/io.c
-  deps/so_libs/reimpl/mem.c
-  deps/so_libs/reimpl/pthr.c
-  deps/so_libs/reimpl/sys.c
   deps/so_libs/libc.c
   deps/so_libs/libstdcpp.c
   deps/so_libs/libm.c
@@ -73,8 +69,6 @@ add_executable(${CMAKE_PROJECT_NAME}
   deps/so_libs/libdl.c
   deps/so_libs/libcutils.c
   deps/so_libs/libdvm.c
-
-  deps/sha1/sha1.c
 
   source/utils/dialog.c
   source/utils/utils.c

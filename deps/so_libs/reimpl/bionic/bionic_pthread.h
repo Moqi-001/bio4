@@ -8,14 +8,8 @@
  * of the MIT license. See the LICENSE file for details.
  */
 
-/**
- * @file  pthr.h
- * @brief Wrapper for vitasdk/newlib pthread functions to work with
- *        Android's pthread structs which are different
- */
-
-#ifndef SOLOADER_PTHR_H
-#define SOLOADER_PTHR_H
+#ifndef BIONIC_PTHREAD_H
+#define BIONIC_PTHREAD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,8 +35,10 @@ typedef struct {
     pthread_cond_t *real_ptr;  // replaces `int volatile value;`
 } pthread_cond_t_bionic;
 
-void __pthread_cleanup_push_soloader(pte_cleanup_t *cleanup, void (*routine)(void *), void *arg);
-void __pthread_cleanup_pop_soloader(pte_cleanup_t *cleanup, int execute);
+typedef struct __pthread_cleanup_t_bionic __pthread_cleanup_t_bionic;
+
+void __pthread_cleanup_push_soloader(__pthread_cleanup_t_bionic *cleanup, void (*routine)(void *), void *arg);
+void __pthread_cleanup_pop_soloader(__pthread_cleanup_t_bionic *cleanup, int execute);
 
 // pthread_t is same size on bionic and newlib
 int       pthread_create_soloader(pthread_t *thread, const pthread_attr_t_bionic *attr, void *(*start)(void *), void *param);
@@ -99,4 +95,4 @@ int sem_wait_soloader(int *sem);
 };
 #endif
 
-#endif  // SOLOADER_PTHR_H
+#endif

@@ -40,17 +40,14 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/unistd.h>
+#include <sys/utsname.h>
 
 #include <psp2/kernel/clib.h>
-#include <so_linker/so_linker.h>
 #include <so_common/so_logger.h>
 #include <so_common/so_utils.h>
+#include <so_linker/so_linker.h>
 
-#include "reimpl/errno.h"
-#include "reimpl/io.h"
-#include "reimpl/mem.h"
-#include "reimpl/pthr.h"
-#include "reimpl/sys.h"
+#include "reimpl/bionic.h"
 
 // ===== ARM C ABI (aeabi) =====
 extern void               __aeabi_atexit(void *object, void (*destructor)(void *), void *dso_handle);
@@ -126,22 +123,16 @@ extern void *__dso_handle;
 
 // ===== Stack Protector =====
 extern uintptr_t __stack_chk_guard;
+extern void      __stack_chk_fail();
 
 // ===== Assert Internals =====
-extern void __assert(const char *expr, const char *file, unsigned int line, const char *func);
+extern void __assert(const char *file, int line, const char *failed_expression);
+extern void __assert_func(const char *file, int line, const char *function, const char *failed_expression);
+#define __assert2 __assert_func
 
 // ===== Stdio Internals =====
-static FILE __sF_fake[3];
-extern int  __srget(FILE *fp);
-extern int  __swbuf(int c, FILE *fp);
-
-// ===== Ctype Data Tables =====
-extern const char  *BIONIC_ctype_;
-extern const short *BIONIC_tolower_tab_;
-extern const short *BIONIC_toupper_tab_;
-
-// ===== System Info =====
-const unsigned int __page_size = PAGE_SIZE;
+extern int __srget(FILE *fp);
+extern int __swbuf(int c, FILE *fp);
 
 char *mktemp_soloader(char *template) {
 #pragma GCC diagnostic push
@@ -151,22 +142,12 @@ char *mktemp_soloader(char *template) {
     return result;
 }
 
-int getnameinfo(const struct sockaddr *sa, socklen_t salen,
+int getnameinfo_soloader(const struct sockaddr *sa, socklen_t salen,
                 char *host, socklen_t hostlen,
                 char *serv, socklen_t servlen, int flags) {
     if (host && hostlen > 0) host[0] = '\0';
     if (serv && servlen > 0) serv[0] = '\0';
     return EAI_SYSTEM;
-}
-
-int uname_soloader(void *buf) {
-    strcpy(buf + 195, "1.0");
-    return 0;
-}
-
-int select_soloader(int n, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) {
-    so_logd("select: called");
-    return 0;
 }
 
 // ==================== libc.so ====================
@@ -244,11 +225,12 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_OBJ("__dso_handle", &__dso_handle, sizeof(__dso_handle)),
 
     // ===== Stack Protection =====
-    SO_SYMBOL_FUNC("__stack_chk_fail", &__stack_chk_fail_soloader),
+    SO_SYMBOL_FUNC("__stack_chk_fail", &__stack_chk_fail),
     SO_SYMBOL_OBJ("__stack_chk_guard", &__stack_chk_guard, 4),
 
     // ===== Assertion / Debug =====
     SO_SYMBOL_FUNC("__assert", &__assert),
+    SO_SYMBOL_FUNC("__assert2", &__assert2),
 
     // ===== Memory Management =====
     SO_SYMBOL_FUNC("malloc", &malloc),
@@ -260,10 +242,10 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("valloc", &valloc),
 
     // ===== Memory Mapping (mmap) =====
-    SO_SYMBOL_FUNC("mmap", &mmap),
-    SO_SYMBOL_FUNC("munmap", &munmap),
-    SO_SYMBOL_FUNC("mprotect", &mprotect),
-    SO_SYMBOL_FUNC("msync", &msync),
+    SO_SYMBOL_FUNC("mmap", &mmap_soloader),
+    SO_SYMBOL_FUNC("munmap", &munmap_soloader),
+    SO_SYMBOL_FUNC("mprotect", &mprotect_soloader),
+    SO_SYMBOL_FUNC("msync", &msync_soloader),
 
     // ===== Memory Operations (byte/string) =====
     SO_SYMBOL_FUNC("memcmp", &memcmp),
@@ -438,8 +420,8 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("wmemset", &wmemset),
 
     // ===== stdlib - General Utilities =====
-    SO_SYMBOL_FUNC("abort", &abort_soloader),
-    SO_SYMBOL_FUNC("exit", &exit_soloader),
+    SO_SYMBOL_FUNC("abort", &abort),
+    SO_SYMBOL_FUNC("exit", &exit),
     SO_SYMBOL_FUNC("atof", &atof),
     SO_SYMBOL_FUNC("atoi", &atoi),
     SO_SYMBOL_FUNC("atol", &atol),
@@ -449,8 +431,8 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("lrand48", &lrand48),
     SO_SYMBOL_FUNC("srand48", &srand48),
     SO_SYMBOL_FUNC("qsort", &qsort),
-    SO_SYMBOL_FUNC("getenv", &getenv_soloader),
-    SO_SYMBOL_FUNC("setenv", &setenv_soloader),
+    SO_SYMBOL_FUNC("getenv", &getenv),
+    SO_SYMBOL_FUNC("setenv", &setenv),
     SO_SYMBOL_FUNC("system", &system),
     SO_SYMBOL_FUNC("sleep", &sleep),
     SO_SYMBOL_FUNC("usleep", &usleep),
@@ -485,14 +467,13 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("ftime", &ftime),
 
     // ===== Errno =====
-    SO_SYMBOL_FUNC("__errno", &__errno_soloader),
-    SO_SYMBOL_FUNC("strerror", &strerror_soloader),
-    SO_SYMBOL_FUNC("strerror_r", &strerror_r_soloader),
+    SO_SYMBOL_FUNC("__errno", &__errno),
+    SO_SYMBOL_FUNC("strerror", &strerror),
+    SO_SYMBOL_FUNC("strerror_r", &strerror),
 
     // ===== Signal =====
     SO_SYMBOL_FUNC("bsd_signal", &signal),
     SO_SYMBOL_FUNC("raise", &raise),
-    SO_SYMBOL_FUNC("sigaction", &sigaction),
     SO_SYMBOL_FUNC("kill", &kill),
 
     // ===== Socket =====
@@ -513,7 +494,7 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("getpeername", &getpeername),
     SO_SYMBOL_FUNC("shutdown", &shutdown),
     SO_SYMBOL_FUNC("poll", &poll),
-    SO_SYMBOL_FUNC("select", &select_soloader),
+    SO_SYMBOL_FUNC("select", &select),
 
     // ===== Epoll =====
     SO_SYMBOL_FUNC("epoll_create", &so_ret_0),
@@ -522,7 +503,7 @@ static so_symbol libc_symbols[] = {
 
     // ===== Network Address =====
     SO_SYMBOL_FUNC("getaddrinfo", &getaddrinfo),
-    SO_SYMBOL_FUNC("getnameinfo", &getnameinfo),
+    SO_SYMBOL_FUNC("getnameinfo_soloader", &getnameinfo_soloader),
     SO_SYMBOL_FUNC("freeaddrinfo", &freeaddrinfo),
     SO_SYMBOL_FUNC("gethostbyaddr", &gethostbyaddr),
     SO_SYMBOL_FUNC("gethostbyname", &gethostbyname),
@@ -551,9 +532,9 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("stat", &stat_soloader),
     SO_SYMBOL_FUNC("lstat", &lstat),
     SO_SYMBOL_FUNC("fstat", &fstat_soloader),
-    SO_SYMBOL_FUNC("dup", &dup_soloader),
-    SO_SYMBOL_FUNC("fcntl", &fcntl_soloader),
-    SO_SYMBOL_FUNC("fsync", &fsync_soloader),
+    SO_SYMBOL_FUNC("dup", &dup),
+    SO_SYMBOL_FUNC("fcntl", &fcntl),
+    SO_SYMBOL_FUNC("fsync", &fsync),
     SO_SYMBOL_FUNC("ftruncate", &ftruncate),
     SO_SYMBOL_FUNC("truncate", &truncate),
     SO_SYMBOL_FUNC("pipe", &pipe),
@@ -562,9 +543,12 @@ static so_symbol libc_symbols[] = {
 
     // ===== Directory Operations =====
     SO_SYMBOL_FUNC("opendir", &opendir_soloader),
-    SO_SYMBOL_FUNC("closedir", &closedir_soloader),
+    SO_SYMBOL_FUNC("fdopendir", &fdopendir_soloader),
     SO_SYMBOL_FUNC("readdir", &readdir_soloader),
     SO_SYMBOL_FUNC("readdir_r", &readdir_r_soloader),
+    SO_SYMBOL_FUNC("closedir", &closedir_soloader),
+    SO_SYMBOL_FUNC("rewinddir", &rewinddir_soloader),
+    SO_SYMBOL_FUNC("dirfd", &dirfd_soloader),
 
     // ===== Temporary Files =====
     SO_SYMBOL_FUNC("mktemp", &mktemp_soloader),
@@ -645,10 +629,10 @@ static so_symbol libc_symbols[] = {
     SO_SYMBOL_FUNC("sched_get_priority_min", &sched_get_priority_min),
 
     // ===== Atomic Operations =====
-    SO_SYMBOL_FUNC("__atomic_cmpxchg", &__atomic_cmpxchg),
-    SO_SYMBOL_FUNC("__atomic_dec", &__atomic_dec),
-    SO_SYMBOL_FUNC("__atomic_inc", &__atomic_inc),
-    SO_SYMBOL_FUNC("__atomic_swap", &__atomic_swap),
+    SO_SYMBOL_FUNC("__atomic_cmpxchg", &__atomic_cmpxchg_soloader),
+    SO_SYMBOL_FUNC("__atomic_swap", &__atomic_swap_soloader),
+    SO_SYMBOL_FUNC("__atomic_inc", &__atomic_inc_soloader),
+    SO_SYMBOL_FUNC("__atomic_dec", &__atomic_dec_soloader),
 
     // ===== Non-Local Jumps =====
     SO_SYMBOL_FUNC("setjmp", &setjmp),
@@ -657,13 +641,10 @@ static so_symbol libc_symbols[] = {
     // ===== Process Control =====
     SO_SYMBOL_FUNC("fork", &fork),
     SO_SYMBOL_FUNC("getpid", &getpid),
-    SO_SYMBOL_FUNC("getpagesize", &getpagesize),
+    SO_SYMBOL_FUNC("getpagesize", &getpagesize_soloader),
     SO_SYMBOL_FUNC("sbrk", &sbrk),
-    SO_SYMBOL_FUNC("syscall", &syscall),
-    SO_SYMBOL_FUNC("waitpid", &so_ret_0),
-    SO_SYMBOL_FUNC("prctl", &so_ret_0),
-    SO_SYMBOL_FUNC("sysconf", &so_ret_0),
-    SO_SYMBOL_FUNC("uname", &uname_soloader),
+    SO_SYMBOL_FUNC("syscall", &syscall_soloader),
+    SO_SYMBOL_FUNC("uname", &uname),
 
     // ===== Resource Priority =====
     SO_SYMBOL_FUNC("setpriority", &setpriority),
@@ -679,6 +660,11 @@ static so_symbol libc_symbols[] = {
     // ===== Google Extensions =====
     SO_SYMBOL_FUNC("__google_potentially_blocking_region_begin", &so_ret_0),
     SO_SYMBOL_FUNC("__google_potentially_blocking_region_end", &so_ret_0),
+
+    // ===== MD5 =====
+    SO_SYMBOL_FUNC("MD5_Init", &MD5_Init),
+    SO_SYMBOL_FUNC("MD5_Update", &MD5_Update),
+    SO_SYMBOL_FUNC("MD5_Final", &MD5_Final),
 };
 
 static int prepare_libc(so_library *library) {

@@ -16,10 +16,10 @@
 
 #include <psp2/kernel/clib.h>
 #include <psp2/kernel/threadmgr.h>
-#include <so_linker/so_linker.h>
 #include <so_common/so_logger.h>
+#include <so_linker/so_linker.h>
 
-#include "pthr.h"
+#include "bionic_pthread.h"
 
 #define PTHR_MAX_OBJECTS 1024
 
@@ -45,15 +45,15 @@ void                       *initializedObjects[PTHR_MAX_OBJECTS] = {0};
 static SceKernelLwMutexWork pthr_mutex;
 static volatile short int   pthr_mutex_inited = 0;
 
-#define PTHR_LOCK                                                              \
-    if (!pthr_mutex_inited) {                                                  \
+#define PTHR_LOCK                                                               \
+    if (!pthr_mutex_inited) {                                                   \
         int ret = sceKernelCreateLwMutex(&pthr_mutex, "_log_lock", 0, 0, NULL); \
-        if (ret < 0) {                                                         \
-            sceClibPrintf("Error: failed to create pthr mutex: 0x%x\n", ret);  \
-            return 0;                                                          \
-        }                                                                      \
-        pthr_mutex_inited = 1;                                                 \
-    }                                                                          \
+        if (ret < 0) {                                                          \
+            sceClibPrintf("Error: failed to create pthr mutex: 0x%x\n", ret);   \
+            return 0;                                                           \
+        }                                                                       \
+        pthr_mutex_inited = 1;                                                  \
+    }                                                                           \
     sceKernelLockLwMutex(&pthr_mutex, 1, NULL);
 
 #define PTHR_UNLOCK                             \
@@ -114,7 +114,7 @@ PTHR_INLINE int _mutex_t_static_init(pthread_mutex_t_bionic *mutex, const pthrea
     int ret = 0, kind = PTHREAD_MUTEX_NORMAL;
 
     if (isObjectInitialized(mutex)) {
-        // logv_debug("mutex already initialized: %p", mutex);
+        // so_logd("mutex already initialized: %p", mutex);
         return ret;
     }
 
@@ -153,7 +153,7 @@ PTHR_INLINE int _cond_t_static_init(pthread_cond_t_bionic *cond, const pthread_c
     int ret = 0;
 
     if (isObjectInitialized(cond)) {
-        // logv_debug("cond already initialized: %p", cond);
+        // so_logd("cond already initialized: %p", cond);
         return ret;
     }
 
@@ -172,12 +172,12 @@ PTHR_INLINE int _cond_t_static_init(pthread_cond_t_bionic *cond, const pthread_c
     return ret;
 }
 
-void __pthread_cleanup_push_soloader(pte_cleanup_t *cleanup, void (*routine)(void *), void *arg) {
+void __pthread_cleanup_push_soloader(__pthread_cleanup_t_bionic *cleanup, void (*routine)(void *), void *arg) {
     so_logd("__pthread_cleanup_push(%p,%p,%p)", cleanup, routine, arg);
-    pte_push_cleanup(cleanup, routine, arg);
+    pte_push_cleanup((pte_cleanup_t *)cleanup, routine, arg); // 结构体成员顺序不同，但大小相同，直接强制转换
 }
 
-void __pthread_cleanup_pop_soloader(pte_cleanup_t *cleanup, int execute) {
+void __pthread_cleanup_pop_soloader(__pthread_cleanup_t_bionic *cleanup, int execute) {
     so_logd("__pthread_cleanup_pop(%p,%d)", cleanup, execute);
     pte_pop_cleanup(execute);
 }

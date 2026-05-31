@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <psp2/kernel/threadmgr.h>
+
 #include <freetype2/ft2build.h>
 #include FT_FREETYPE_H
 
@@ -10,12 +12,13 @@
 #define DEFAULT_ATLAS_H 512
 
 typedef struct so_font {
-    void        *font_buffer;
-    uint32_t     buffer_size;
-    FT_Library   ftlibrary;
-    FT_Face      ftface;
-    font_atlas **atlases;
-    int          num_atlases;
+    void                *font_buffer;
+    uint32_t             buffer_size;
+    FT_Library           ftlibrary;
+    FT_Face              ftface;
+    font_atlas         **atlases;
+    int                  num_atlases;
+    SceKernelLwMutexWork mutex;
 } so_font;
 
 typedef struct text_line {
@@ -31,31 +34,6 @@ typedef struct text_info {
     int                num_chars;
     int                max_width;
 } text_info;
-
-static int utf8_to_ucs4_length(const unsigned char *utf8, int utf8_len) {
-    if (!utf8 || utf8_len <= 0) return 0;
-
-    int                  ucs4_len = 0;
-    const unsigned char *p        = (const unsigned char *)utf8;
-    const unsigned char *end      = p + utf8_len;
-
-    while (p < end) {
-        if ((utf8[0] & 0x80) == 0) {  // 1字节 ASCII
-            p += 1;
-        } else if ((*p & 0xE0) == 0xC0) {  // 2字节 UTF-8
-            p += 2;
-        } else if ((*p & 0xF0) == 0xE0) {  // 3字节 UTF-8
-            p += 3;
-        } else if ((*p & 0xF8) == 0xF0) {  // 4字节 UTF-8
-            p += 4;
-        } else {  // 非法 UTF-8
-            p += 1;
-        }
-        ucs4_len++;
-    }
-
-    return ucs4_len;
-}
 
 static int utf8_to_ucs4(const unsigned char *utf8, uint32_t *codepoint) {
     if ((utf8[0] & 0x80) == 0) {
@@ -129,6 +107,7 @@ so_font *so_font_load_mem(void *buffer, size_t buffer_size, int copy) {
         return NULL;
     }
 
+    sceKernelCreateLwMutex(&font->mutex, "so_font_mutex", 2, 0, NULL);
     return font;
 }
 
@@ -393,16 +372,22 @@ static void _font_free_text_info(text_info *info) {
 unsigned char *so_font_create_bitmap(so_font *font, const char *text, int font_size, int linespace, int *out_width, int *out_height) {
     if (!font || !text || font_size <= 0) return NULL;
 
+    sceKernelLockLwMutex(&font->mutex, 1, NULL);
+
     font_atlas *atlas = _font_get_atlas(font, font_size);
     if (!atlas) {
+        sceKernelUnlockLwMutex(&font->mutex, 1);
         return NULL;
     }
 
     int        text_len = strlen(text);
     text_info *info     = _font_get_text_info(font, atlas, text, text_len);
     if (!info) {
+        sceKernelUnlockLwMutex(&font->mutex, 1);
         return NULL;
     }
+
+    sceKernelUnlockLwMutex(&font->mutex, 1);
 
     int            line_height = atlas->font_height + linespace;
     int            max_w       = info->max_width;

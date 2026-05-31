@@ -68,11 +68,6 @@ static so_symbol libutils_symbols[] = {
     SO_SYMBOL_FUNC("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPlS3_S3_S3_S3_", &AZipFileRO_fake),
     SO_SYMBOL_FUNC("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PlS4_S4_", &AZipFileRO_fake),
     SO_SYMBOL_FUNC("_ZNK7android9ZipFileRO12getEntryInfoEPvPiPjS3_PxPlS5_", &AZipFileRO_fake),
-
-    // ===== MD5 =====
-    SO_SYMBOL_FUNC("MD5_Init", &MD5_Init),
-    SO_SYMBOL_FUNC("MD5_Update", &MD5_Update),
-    SO_SYMBOL_FUNC("MD5_Final", &MD5_Final),
 };
 
 so_library so_library_utils = {

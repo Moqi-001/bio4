@@ -52,13 +52,13 @@ static so_symbol libstdcpp_symbols[] = {
     // ===== C++ ABI exception handling =====
     SO_SYMBOL_FUNC("__cxa_allocate_exception", &__cxa_allocate_exception),
     SO_SYMBOL_FUNC("__cxa_begin_catch", &__cxa_begin_catch),
-    SO_SYMBOL_FUNC("__cxa_begin_cleanup", &so_ret_0),
+    SO_SYMBOL_FUNC("__cxa_begin_cleanup", &__cxa_begin_cleanup),
     SO_SYMBOL_FUNC("__cxa_call_unexpected", &__cxa_call_unexpected),
     SO_SYMBOL_FUNC("__cxa_end_catch", &__cxa_end_catch),
     SO_SYMBOL_FUNC("__cxa_free_exception", &__cxa_free_exception),
     SO_SYMBOL_FUNC("__cxa_rethrow", &__cxa_rethrow),
     SO_SYMBOL_FUNC("__cxa_throw", &__cxa_throw),
-    SO_SYMBOL_FUNC("__cxa_type_match", &so_ret_0),
+    SO_SYMBOL_FUNC("__cxa_type_match", &__cxa_type_match),
 
     // ===== C++ ABI static initialization =====
     SO_SYMBOL_FUNC("__cxa_guard_acquire", &__cxa_guard_acquire),

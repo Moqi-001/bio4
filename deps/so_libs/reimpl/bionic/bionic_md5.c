@@ -16,7 +16,7 @@
  */
 
 #include <string.h>
-#include "md5.h"
+#include "bionic_md5.h"
 
 /*
  * The basic MD5 functions.
