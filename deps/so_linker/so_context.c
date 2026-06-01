@@ -60,6 +60,7 @@ int so_context_add_module(so_context *context, so_module *mod) {
         context->modules       = node;
     }
 
+    so_module_retain(mod);
     context->num_modules++;
 
     return 0;

@@ -226,7 +226,6 @@ so_module *so_module_create(const so_library *library) {
 
     mod->status = SO_MODULE_STATUS_INITIALIZED;
 
-    so_module_retain(mod);
     so_linker_register_module(mod);
 
     so_logd("[SOLINKER] so_module_create(%p): success! ('%s')", library, mod->soname);
@@ -404,7 +403,6 @@ so_module *so_module_load_mem(void *buffer, size_t size) {
         mod->num_rela_plt = plt_size / sizeof(Elf32_Rela);
     }
 
-    so_module_retain(mod);
     so_linker_register_module(mod);
 
     so_logd("[SOLINKER] so_module_load_mem(%p,%u): success! ('%s')", buffer, size, mod->soname);
@@ -450,7 +448,7 @@ so_module *so_module_load(const char *filename) {
 
     if (!mod->soname) {
         const char *soname = strrchr(filename, '/');
-        if (!soname) {
+        if (!soname++) {
             soname = filename;
         }
         mod->soname = strdup(soname);
@@ -463,6 +461,7 @@ so_module *so_module_load(const char *filename) {
 void so_module_unload(so_module *mod) {
     if (mod) {
         so_logd("[SOLINKER] so_module_unload(%p): ('%s')", mod, mod->soname);
+        so_linker_unregister_module(mod);
 
         if (mod->soname) {
             free(mod->soname);
@@ -779,7 +778,7 @@ so_module *so_module_open(const char *filename) {
 void so_module_close(so_module *mod) {
     if (mod) {
         so_logd("[SOLINKER] so_module_close(%p): ('%s')", mod, mod->soname);
-        so_linker_unregister_module(mod);
+        mod->ref_count = 0;
         so_module_fini(mod);
         so_module_unload(mod);
     }
@@ -795,7 +794,7 @@ int so_module_retain(so_module *mod) {
 void so_module_release(so_module *mod) {
     if (!mod) return;
 
-    if (mod->ref_count == 0 || --mod->ref_count == 0) {
+    if (mod->ref_count-- == 1) {
         so_module_close(mod);
     }
 }
