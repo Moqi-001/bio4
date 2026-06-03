@@ -43,7 +43,7 @@ static jint (*native_onCreate)(JNIEnv *env, jobject thiz, jobject ctx);
 static void (*native_onRestart)(JNIEnv *env, jobject thiz);
 static void (*native_onStart)(JNIEnv *env, jobject thiz);
 static void (*native_onResume)(JNIEnv *env, jobject thiz);
-static jboolean (*native_onSurfaceCreated)(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height);
+static jboolean (*native_onSurfaceCreated)(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height, jint language_type);
 static jboolean (*native_onSurfaceChanged)(JNIEnv *env, jobject thiz, jobject gl, jint width, jint height);
 static jint (*native_onDrawFrame)(JNIEnv *env, jobject thiz, jobject gl);
 static void (*native_onPause)(JNIEnv *env, jobject thiz);
@@ -72,8 +72,8 @@ void Bio4PreActivity_native_onStart(JNIEnv *env, jobject thiz) {
 void Bio4PreActivity_native_onResume(JNIEnv *env, jobject thiz) {
     JNI_CALL_VOID_NATIVE(native_onResume, env, thiz);
 }
-jboolean Bio4PreActivity_native_onSurfaceCreated(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height) {
-    return JNI_CALL_TYPE_NATIVE(jboolean, native_onSurfaceCreated, env, thiz, gl, config, width, height);
+jboolean Bio4PreActivity_native_onSurfaceCreated(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height, jint language_type) {
+    return JNI_CALL_TYPE_NATIVE(jboolean, native_onSurfaceCreated, env, thiz, gl, config, width, height, language_type);
 }
 jboolean Bio4PreActivity_native_onSurfaceChanged(JNIEnv *env, jobject thiz, jobject gl, jint width, jint height) {
     return JNI_CALL_TYPE_NATIVE(jboolean, native_onSurfaceChanged, env, thiz, gl, width, height);
@@ -155,7 +155,7 @@ static void mainLoop() {
 
 void Bio4PreActivity_onStart() {
     so_logi("Main onStart");
-    Bio4PreActivity_native_onSurfaceCreated(&_jni_env, Bio4PreActivity_jobject, NULL, NULL, SCREEN_W, SCREEN_H);
+    Bio4PreActivity_native_onSurfaceCreated(&_jni_env, Bio4PreActivity_jobject, NULL, NULL, SCREEN_W, SCREEN_H, Bio4_lang_id);
     Bio4PreActivity_native_onSurfaceChanged(&_jni_env, Bio4PreActivity_jobject, NULL, SCREEN_W, SCREEN_H);
     sThis->m_isAppAlive = 1;
     mainLoop();
@@ -204,7 +204,7 @@ static jsymbol class_symbols[] = {
     JNI_SYMBOL_NATIVE("native_onRestart", "()V", &native_onRestart),
     JNI_SYMBOL_NATIVE("native_onStart", "()V", &native_onStart),
     JNI_SYMBOL_NATIVE("native_onResume", "()V", &native_onResume),
-    JNI_SYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;II)Z", &native_onSurfaceCreated),
+    JNI_SYMBOL_NATIVE("native_onSurfaceCreated", "(Ljava/lang/Object;Ljava/lang/Object;III)Z", &native_onSurfaceCreated),
     JNI_SYMBOL_NATIVE("native_onSurfaceChanged", "(Ljava/lang/Object;II)Z", &native_onSurfaceChanged),
     JNI_SYMBOL_NATIVE("native_onDrawFrame", "(Ljava/lang/Object;)I", &native_onDrawFrame),
     JNI_SYMBOL_NATIVE("native_onPause", "()V", &native_onPause),
@@ -227,7 +227,7 @@ static jsymbol class_symbols[] = {
 };
 
 static jclassMeta class_meta = {
-    .name          = "jp/co/capcom/android/bio4_LGUplus0119/Bio4PreActivity",
+    .name          = "jjp/co/capcom/android/googleplay/bio4/Bio4PreActivity",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),

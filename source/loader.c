@@ -24,6 +24,7 @@ extern so_library so_library_log;
 extern so_library so_library_dl;
 extern so_library so_library_cutils;
 extern so_library so_library_dvm;
+extern so_library so_library_jnigraphics;
 
 so_module *mce_mod  = NULL;
 so_module *bio4_mod = NULL;
@@ -57,6 +58,7 @@ static int init_needed_modules() {
     so_module_create(&so_library_dl);
     so_module_create(&so_library_cutils);
     so_module_create(&so_library_dvm);
+    so_module_create(&so_library_jnigraphics);
 
     return 0;
 }

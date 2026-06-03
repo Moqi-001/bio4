@@ -69,6 +69,7 @@ add_executable(${CMAKE_PROJECT_NAME}
   deps/so_libs/libdl.c
   deps/so_libs/libcutils.c
   deps/so_libs/libdvm.c
+  deps/so_libs/libjnigraphics.c
 
   source/utils/dialog.c
   source/utils/utils.c

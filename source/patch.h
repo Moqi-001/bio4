@@ -7,6 +7,8 @@ extern "C" {
 
 #include <so_linker/so_linker.h>
 
+extern int Bio4_lang_id;
+
 int soloader_patch_mce(so_module *mod);
 int soloader_patch_bio4(so_module *mod);
 

@@ -68,7 +68,7 @@ static jsymbol class_symbols[] = {
 };
 
 static jclassMeta class_meta = {
-    .name          = "jp/co/capcom/android/bio4_LGUplus0119/AssetFileInfo",
+    .name          = "jjp/co/capcom/android/googleplay/bio4/AssetFileInfo",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),

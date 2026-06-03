@@ -33,14 +33,14 @@ void SetInputGrav(Accelerometer *thiz, jargs *args) {
 
 static jsymbol class_symbols[] = {
     // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljp/co/capcom/android/bio4_LGUplus0119/Accelerometer;", &getInstance),
+    JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljjp/co/capcom/android/googleplay/bio4/Accelerometer;", &getInstance),
 
     // 实例方法
     JNI_SYMBOL_METHOD("SetInputGrav", "(F)V", &SetInputGrav),
 };
 
 static jclassMeta class_meta = {
-    .name          = "jp/co/capcom/android/bio4_LGUplus0119/Accelerometer",
+    .name          = "jjp/co/capcom/android/googleplay/bio4/Accelerometer",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),

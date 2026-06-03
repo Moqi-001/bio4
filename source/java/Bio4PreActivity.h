@@ -12,7 +12,7 @@ jint     Bio4PreActivity_native_onCreate(JNIEnv *env, jobject thiz, jobject ctx)
 void     Bio4PreActivity_native_onRestart(JNIEnv *env, jobject thiz);
 void     Bio4PreActivity_native_onStart(JNIEnv *env, jobject thiz);
 void     Bio4PreActivity_native_onResume(JNIEnv *env, jobject thiz);
-jboolean Bio4PreActivity_native_onSurfaceCreated(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height);
+jboolean Bio4PreActivity_native_onSurfaceCreated(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height, jint language_type);
 jboolean Bio4PreActivity_native_onSurfaceChanged(JNIEnv *env, jobject thiz, jobject gl, jint width, jint height);
 jint     Bio4PreActivity_native_onDrawFrame(JNIEnv *env, jobject thiz, jobject gl);
 void     Bio4PreActivity_native_onPause(JNIEnv *env, jobject thiz);
