@@ -859,7 +859,7 @@ void setVolumeBGM(AudioPlayer *thiz, jargs *args) {
 }
 
 static jsymbol class_symbols[] = {
-        JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljjp/co/capcom/android/googleplay/bio4/AudioPlayer;", &getInstance),
+        JNI_SYMBOL_STATIC_METHOD("getInstance", "()Ljjp/co/capcom/android/googleplay/Evil4/AudioPlayer;", &getInstance),
 
         JNI_SYMBOL_METHOD("init", "(II)Z", &init),
         JNI_SYMBOL_METHOD("term", "(II)Z", &term),
@@ -885,7 +885,7 @@ static jsymbol class_symbols[] = {
 };
 
 static jclassMeta class_meta = {
-        .name          = "jjp/co/capcom/android/googleplay/bio4/AudioPlayer",
+        .name          = "jjp/co/capcom/android/googleplay/Evil4/AudioPlayer",
         .super_name    = NULL,
         .symbols       = class_symbols,
         .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),

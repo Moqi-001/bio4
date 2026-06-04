@@ -33,7 +33,7 @@ static jsymbol class_symbols[] = {
 };
 
 static jclassMeta class_meta = {
-    .name          = "jjp/co/capcom/android/googleplay/bio4/FileManager",
+    .name          = "jjp/co/capcom/android/googleplay/Evil4/FileManager",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
