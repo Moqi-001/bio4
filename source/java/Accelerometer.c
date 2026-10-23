@@ -9,8 +9,9 @@ typedef struct Accelerometer {
     jfloat m_InputGrav;
 } Accelerometer;
 
-static jclass  Accelerometer_jclass  = NULL;
-static jobject Accelerometer_jobject = NULL;
+static jclass         Accelerometer_jclass   = NULL;
+static jobject        Accelerometer_jobject  = NULL;
+static Accelerometer *Accelerometer_instance = NULL;
 
 static jobject getInstance() {
     jobject result = JniNewLocalRef(Accelerometer_jobject);
@@ -20,6 +21,25 @@ static jobject getInstance() {
 
 void Accelerometer_ctor(Accelerometer *thiz) {
     so_logd("[Accelerometer] ctor()");
+}
+
+void Accelerometer_onSensorChanged(float currX, float currY, float currZ,
+                                   float prevX, float prevY, float prevZ) {
+    const float G = 9.80665f;
+    currX *= G;
+    currY *= G;
+    currZ *= G;
+    prevX *= G;
+    prevY *= G;
+    prevZ *= G;
+    float dx  = prevX - currX;
+    float dy  = prevY - currY;
+    float dz  = prevZ - currZ;
+    float len = (dx * dx) + (dy * dy) + (dz * dz);
+
+    if (len >= Accelerometer_instance->m_InputGrav) {
+        Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
+    }
 }
 
 // 设置摇晃阈值
@@ -48,6 +68,8 @@ static jclassMeta class_meta = {
 };
 
 void Accelerometer_class_init() {
-    Accelerometer_jclass  = JniCreateClass(&class_meta);
-    Accelerometer_jobject = JniNewGlobalRefTake(JniAllocObject(Accelerometer_jclass));
+    Accelerometer_jclass                = JniCreateClass(&class_meta);
+    Accelerometer_jobject               = JniNewGlobalRefTake(JniAllocObject(Accelerometer_jclass));
+    Accelerometer_instance              = JniGetObjectInstance(Accelerometer_jobject);
+    Accelerometer_instance->m_InputGrav = 100.0f;
 }

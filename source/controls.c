@@ -3,9 +3,11 @@
 
 #include <psp2/ctrl.h>
 #include <psp2/kernel/clib.h>
+#include <psp2/motion.h>
 #include <psp2/touch.h>
 
 #include "android/keycodes.h"
+#include "java/Accelerometer.h"
 #include "java/Bio4PreActivity.h"
 
 #include "config.h"
@@ -16,7 +18,7 @@ typedef struct {
     int      repeat_count;
 } ButtonRemap;
 
-typedef struct UITouchInfo {
+typedef struct {
     int   id;
     float currX;
     float currY;
@@ -30,6 +32,16 @@ typedef struct {
     int         map_y;
     UITouchInfo info;
 } ButtonToTouch;
+
+typedef struct {
+    int   isSetup;
+    float currX;
+    float currY;
+    float currZ;
+    float prevX;
+    float prevY;
+    float prevZ;
+} SensorInfo;
 
 #define JOYSTICK_CENTER      127.0f
 #define JOYSTICK_DEADZONE    24.0f
@@ -70,7 +82,6 @@ static ButtonToTouch btn2touch[] = {
     {SCE_CTRL_SELECT,   62.0f,  48.0f,  {0, -1, -1, -1, -1}}, // 菜单
 };
 
-
 #define native_touchDown(pTouchInfo, currX, currY, prevX, prevY) \
     Bio4PreActivity_native_onTouchBegan(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
 #define native_touchMove(pTouchInfo, currX, currY, prevX, prevY) \
@@ -101,11 +112,15 @@ void controls_poll() {
     };
     static UITouchInfo joyInfo = {
         0, -1, -1, -1, -1};
+    static SensorInfo sensorInfo = {
+        0, 0, 0, 0, 0, 0, 0};
 
-    SceCtrlData  pad;
-    SceTouchData touch;
+    SceCtrlData          pad;
+    SceTouchData         touch;
+    SceMotionSensorState sensor;
     sceCtrlPeekBufferPositive(0, &pad, 1);
     sceTouchPeek(SCE_TOUCH_PORT_FRONT, &touch, 1);
+    sceMotionGetSensorState(&sensor, 1);
 
     int map_port = 0;
 
@@ -183,4 +198,23 @@ void controls_poll() {
         info->prevX = info->currX;
         info->prevY = info->currY;
     }
+
+    // Sensor
+    sensorInfo.currX = sensor.accelerometer.x;
+    sensorInfo.currY = sensor.accelerometer.y;
+    sensorInfo.currZ = sensor.accelerometer.z;
+
+    if (!sensorInfo.isSetup) {
+        sensorInfo.prevX   = sensorInfo.currX;
+        sensorInfo.prevY   = sensorInfo.currY;
+        sensorInfo.prevZ   = sensorInfo.currZ;
+        sensorInfo.isSetup = 1;
+    }
+
+    Accelerometer_onSensorChanged(sensorInfo.currX, sensorInfo.currY, sensorInfo.currZ,
+                                  sensorInfo.prevX, sensorInfo.prevY, sensorInfo.prevZ);
+
+    sensorInfo.prevX = sensorInfo.currX;
+    sensorInfo.prevY = sensorInfo.currY;
+    sensorInfo.prevZ = sensorInfo.currZ;
 }
