@@ -1,10 +1,12 @@
 #include <math.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <psp2/ctrl.h>
 #include <psp2/kernel/clib.h>
 #include <psp2/motion.h>
 #include <psp2/touch.h>
+#include <so_common/so_logger.h>
 
 #include "android/keycodes.h"
 #include "java/Accelerometer.h"
@@ -62,8 +64,8 @@ typedef enum {
     BTN_IDX_CIRCLE,
     BTN_IDX_SQUARE,
     BTN_IDX_TRIANGLE,
-    BTN_IDX_L1,
-    BTN_IDX_R1,
+    BTN_IDX_LTRIGGER,
+    BTN_IDX_RTRIGGER,
     BTN_IDX_START,
     BTN_IDX_SELECT,
     BTN_IDX_MAX,
@@ -85,17 +87,17 @@ static ButtonRemap btn_remap[] = {
 };
 
 static ButtonToTouch btn2touch_main[] = {
-    // {SCE_CTRL_UP,       152.0f, 330.0f, {0, -1, -1, -1, -1}},
-    // {SCE_CTRL_DOWN,     152.0f, 470.0f, {0, -1, -1, -1, -1}},
-    // {SCE_CTRL_LEFT,     82.0f,  400.0f, {0, -1, -1, -1, -1}},
-    // {SCE_CTRL_RIGHT,    222.0f, 400.0f, {0, -1, -1, -1, -1}},
+    {SCE_CTRL_UP,       152.0f, 330.0f, {0, -1, -1, -1, -1}},
+    {SCE_CTRL_DOWN,     152.0f, 470.0f, {0, -1, -1, -1, -1}},
+    {SCE_CTRL_LEFT,     82.0f,  400.0f, {0, -1, -1, -1, -1}},
+    {SCE_CTRL_RIGHT,    222.0f, 400.0f, {0, -1, -1, -1, -1}},
 
     {SCE_CTRL_CROSS,    866.0f, 240.0f, {0, -1, -1, -1, -1}}, // 切换为行走状态
     {SCE_CTRL_CIRCLE,   866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
     {SCE_CTRL_SQUARE,   776.0f, 332.0f, {0, -1, -1, -1, -1}}, // 开门/拾取
     {SCE_CTRL_TRIANGLE, 814.0f, 450.0f, {0, -1, -1, -1, -1}}, // 菜刀
     {SCE_CTRL_LTRIGGER, 0.0f,   0.0f,   {0, -1, -1, -1, -1}}, // 补充子弹
-    {SCE_CTRL_RTRIGGER, 152.0f, 470.0f, {0, -1, -1, -1, -1}}, // 开枪
+    {SCE_CTRL_RTRIGGER, 866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
     {SCE_CTRL_START,    92.0f,  146.0f, {0, -1, -1, -1, -1}}, // 说明
     {SCE_CTRL_SELECT,   62.0f,  48.0f,  {0, -1, -1, -1, -1}}, // 菜单
 };
@@ -150,7 +152,8 @@ void controls_poll() {
         0,
         0,
     };
-    static int      turnKeyPressed = 0;
+    static int      is_autofiring  = 0;
+    static uint32_t autofire_count = 0;
     static uint32_t old_buttons    = 0;
 
     SceCtrlData          pad;
@@ -183,40 +186,13 @@ void controls_poll() {
         int          pressed     = ((pad.buttons & button) == button);
         int          old_pressed = ((old_buttons & button) == button);
 
-        if (btn2touch == btn2touch_main) {
-            if (turnKeyPressed) {  // 转身触发
-                if (btn2touch[i].button == SCE_CTRL_RTRIGGER) {
-                    if (turnKeyPressed == 1) {
-                        pressed = 1;
-                        turnKeyPressed++;
-                    } else if (turnKeyPressed == 2) {
-                        pressed = 0;
-                        turnKeyPressed++;
-                    } else if (turnKeyPressed == 3) {
-                        pressed = 1;
-                        turnKeyPressed++;
-                    } else {
-                        turnKeyPressed = 0;
-                    }
-                }
-            }
-        }
-
         if (pressed) {
             info->id    = map_port++;
             info->currX = map_x;
             info->currY = map_y;
-
             if (info->prevX == -1 || info->prevY == -1) {
-                if (btn2touch == btn2touch_main) {
-                    if (btn2touch[i].button == SCE_CTRL_LTRIGGER) {
-                        Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
-                    } else {
-                        if (btn2touch[i].button == SCE_CTRL_RTRIGGER) {
-                            if (!turnKeyPressed) turnKeyPressed = 1;
-                        }
-                        native_touchDown(&info, info->currX, info->currY, info->prevX, info->prevY);
-                    }
+                if (btn2touch[i].button == SCE_CTRL_LTRIGGER) {
+                    Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
                 } else {
                     native_touchDown(&info, info->currX, info->currY, info->prevX, info->prevY);
                 }
@@ -225,7 +201,6 @@ void controls_poll() {
                     native_touchMove(&info, info->currX, info->currY, info->prevX, info->prevY);
                 }
             }
-
         } else {
             if (info->prevX != -1 || info->prevY != -1) {
                 info->id = map_port++;
@@ -240,26 +215,56 @@ void controls_poll() {
 
     old_buttons = pad.buttons;
 
-    if (turnKeyPressed) {
-        pad.lx = JOYSTICK_CENTER;
-        pad.ly = JOYSTICK_CENTER;
-    }
-
     // JoystickToTouch
-    if (JOYSTICK_IS_MOVED(pad.lx) || JOYSTICK_IS_MOVED(pad.ly)) {
-        joyInfo.id    = map_port++;
-        joyInfo.currX = JOYSTICK_SCREEN_CENTER_X + joystick_screen_offset(pad.lx);
-        joyInfo.currY = JOYSTICK_SCREEN_CENTER_Y + joystick_screen_offset(pad.ly);
+    if (JOYSTICK_IS_MOVED(pad.rx) || JOYSTICK_IS_MOVED(pad.ry)) {
+        joyInfo.id = map_port++;
+        int fire_btn;
+        int rx_off = pad.rx - JOYSTICK_CENTER;
+        int ry_off = pad.ry - JOYSTICK_CENTER;
 
-        if (joyInfo.prevX == -1 || joyInfo.prevY == -1) {
+        if (abs(rx_off) > abs(ry_off)) {  // 左右方向
+            if (rx_off < 0) {
+                fire_btn = BTN_IDX_LEFT;
+            } else {
+                fire_btn = BTN_IDX_RIGHT;
+            }
+        } else {  // 上下方向
+            if (ry_off < 0) {
+                fire_btn = BTN_IDX_UP;
+            } else {
+                fire_btn = BTN_IDX_DOWN;
+            }
+        }
+
+        autofire_count %= 2;
+        if (autofire_count) {
+            joyInfo.currX = btn2touch_main[fire_btn].map_x;
+            joyInfo.currY = btn2touch_main[fire_btn].map_y;
             native_touchDown(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
         } else {
-            native_touchMove(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
-        }
-    } else {
-        if (joyInfo.prevX != -1 || joyInfo.prevY != -1) {
-            joyInfo.id = map_port++;
             native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            joyInfo.currX = -1;
+            joyInfo.currY = -1;
+        }
+        ++autofire_count;
+    } else {
+        if (JOYSTICK_IS_MOVED(pad.lx) || JOYSTICK_IS_MOVED(pad.ly)) {
+            joyInfo.id    = map_port++;
+            joyInfo.currX = JOYSTICK_SCREEN_CENTER_X + joystick_screen_offset(pad.lx);
+            joyInfo.currY = JOYSTICK_SCREEN_CENTER_Y + joystick_screen_offset(pad.ly);
+
+            if (joyInfo.prevX == -1 || joyInfo.prevY == -1) {
+                native_touchDown(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            } else {
+                native_touchMove(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            }
+        } else {
+            if (joyInfo.prevX != -1 || joyInfo.prevY != -1) {
+                joyInfo.id = map_port++;
+                native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            }
+            joyInfo.currX = -1;
+            joyInfo.currY = -1;
         }
     }
     joyInfo.prevX = joyInfo.currX;
