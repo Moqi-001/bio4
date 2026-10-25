@@ -97,7 +97,7 @@ static ButtonToTouch btn2touch_main[] = {
     {SCE_CTRL_SQUARE,   776.0f, 332.0f, {0, -1, -1, -1, -1}}, // 开门/拾取
     {SCE_CTRL_TRIANGLE, 814.0f, 450.0f, {0, -1, -1, -1, -1}}, // 菜刀
     {SCE_CTRL_LTRIGGER, 0.0f,   0.0f,   {0, -1, -1, -1, -1}}, // 补充子弹
-    {SCE_CTRL_RTRIGGER, 152.0f, 470.0f, {0, -1, -1, -1, -1}}, // 开枪
+    {SCE_CTRL_RTRIGGER, 866.0f, 344.0f, {0, -1, -1, -1, -1}}, // 开枪
     {SCE_CTRL_START,    92.0f,  146.0f, {0, -1, -1, -1, -1}}, // 说明
     {SCE_CTRL_SELECT,   62.0f,  48.0f,  {0, -1, -1, -1, -1}}, // 菜单
 };
@@ -190,16 +190,9 @@ void controls_poll() {
             info->id    = map_port++;
             info->currX = map_x;
             info->currY = map_y;
-
-            if (btn2touch[i].button == SCE_CTRL_RTRIGGER) {
-                is_autofiring = 1;
-            } else if (info->prevX == -1 || info->prevY == -1) {
-                if (btn2touch == btn2touch_main) {
-                    if (btn2touch[i].button == SCE_CTRL_LTRIGGER) {
-                        Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
-                    } else {
-                        native_touchDown(&info, info->currX, info->currY, info->prevX, info->prevY);
-                    }
+            if (info->prevX == -1 || info->prevY == -1) {
+                if (btn2touch[i].button == SCE_CTRL_LTRIGGER) {
+                    Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
                 } else {
                     native_touchDown(&info, info->currX, info->currY, info->prevX, info->prevY);
                 }
@@ -209,16 +202,12 @@ void controls_poll() {
                 }
             }
         } else {
-            if (btn2touch[i].button == SCE_CTRL_RTRIGGER) {
-                is_autofiring = 0;
-            } else {
-                if (info->prevX != -1 || info->prevY != -1) {
-                    info->id = map_port++;
-                    native_touchUp(&info, info->currX, info->currY, info->prevX, info->prevY);
-                }
-                info->currX = -1;
-                info->currY = -1;
+            if (info->prevX != -1 || info->prevY != -1) {
+                info->id = map_port++;
+                native_touchUp(&info, info->currX, info->currY, info->prevX, info->prevY);
             }
+            info->currX = -1;
+            info->currY = -1;
         }
         info->prevX = info->currX;
         info->prevY = info->currY;
@@ -227,40 +216,40 @@ void controls_poll() {
     old_buttons = pad.buttons;
 
     // JoystickToTouch
-    if (JOYSTICK_IS_MOVED(pad.lx) || JOYSTICK_IS_MOVED(pad.ly)) {
+    if (JOYSTICK_IS_MOVED(pad.rx) || JOYSTICK_IS_MOVED(pad.ry)) {
         joyInfo.id = map_port++;
+        int fire_btn;
+        int rx_off = pad.rx - JOYSTICK_CENTER;
+        int ry_off = pad.ry - JOYSTICK_CENTER;
 
-        if (is_autofiring) {
-            int fire_btn;
-            int lx_off = pad.lx - JOYSTICK_CENTER;
-            int ly_off = pad.ly - JOYSTICK_CENTER;
-
-            if (abs(lx_off) > abs(ly_off)) {  // 左右方向
-                if (lx_off < 0) {
-                    fire_btn = BTN_IDX_LEFT;
-                } else {
-                    fire_btn = BTN_IDX_RIGHT;
-                }
-            } else {  // 上下方向
-                if (ly_off < 0) {
-                    fire_btn = BTN_IDX_UP;
-                } else {
-                    fire_btn = BTN_IDX_DOWN;
-                }
-            }
-
-            autofire_count %= 2;
-            if (autofire_count) {
-                joyInfo.currX = btn2touch_main[fire_btn].map_x;
-                joyInfo.currY = btn2touch_main[fire_btn].map_y;
-                native_touchDown(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+        if (abs(rx_off) > abs(ry_off)) {  // 左右方向
+            if (rx_off < 0) {
+                fire_btn = BTN_IDX_LEFT;
             } else {
-                joyInfo.currX = -1;
-                joyInfo.currY = -1;
-                native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+                fire_btn = BTN_IDX_RIGHT;
             }
-            ++autofire_count;
+        } else {  // 上下方向
+            if (ry_off < 0) {
+                fire_btn = BTN_IDX_UP;
+            } else {
+                fire_btn = BTN_IDX_DOWN;
+            }
+        }
+
+        autofire_count %= 2;
+        if (autofire_count) {
+            joyInfo.currX = btn2touch_main[fire_btn].map_x;
+            joyInfo.currY = btn2touch_main[fire_btn].map_y;
+            native_touchDown(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
         } else {
+            native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            joyInfo.currX = -1;
+            joyInfo.currY = -1;
+        }
+        ++autofire_count;
+    } else {
+        if (JOYSTICK_IS_MOVED(pad.lx) || JOYSTICK_IS_MOVED(pad.ly)) {
+            joyInfo.id    = map_port++;
             joyInfo.currX = JOYSTICK_SCREEN_CENTER_X + joystick_screen_offset(pad.lx);
             joyInfo.currY = JOYSTICK_SCREEN_CENTER_Y + joystick_screen_offset(pad.ly);
 
@@ -269,15 +258,14 @@ void controls_poll() {
             } else {
                 native_touchMove(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
             }
+        } else {
+            if (joyInfo.prevX != -1 || joyInfo.prevY != -1) {
+                joyInfo.id = map_port++;
+                native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
+            }
+            joyInfo.currX = -1;
+            joyInfo.currY = -1;
         }
-
-    } else {
-        if (joyInfo.prevX != -1 || joyInfo.prevY != -1) {
-            joyInfo.id = map_port++;
-            native_touchUp(&joyInfo, joyInfo.currX, joyInfo.currY, joyInfo.prevX, joyInfo.prevY);
-        }
-        joyInfo.currX = -1;
-        joyInfo.currY = -1;
     }
     joyInfo.prevX = joyInfo.currX;
     joyInfo.prevY = joyInfo.currY;
