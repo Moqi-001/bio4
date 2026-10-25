@@ -19,6 +19,7 @@ typedef struct JavaCall      JavaCall;
 jstring (*JavaCall_callStaticStringMethod)(JavaCall *thiz, const char *name, const char *sig);
 
 int Bio4_lang_id = 1;
+int bio4_window_type = 0;
 
 static int _get_lang_id() {
     int language = 0;
@@ -68,6 +69,18 @@ int Bio4_UserData_GetLangId(Bio4_UserData *thiz) {
     return Bio4_lang_id;
 }
 
+so_hook_ref GM_CtrlLayout_Set_WindowType_hook_ref;
+void        GM_CtrlLayout_Set_WindowType(void *thiz, int type, int btn) {
+    bio4_window_type = type;
+    SO_CONTINUE(int, &GM_CtrlLayout_Set_WindowType_hook_ref, thiz, type, btn);
+}
+
+so_hook_ref GM_CtrlMain_Event_Set_MesEnd_hook_ref;
+void        GM_CtrlMain_Event_Set_MesEnd(void *thiz) {
+    bio4_window_type = 0;
+    SO_CONTINUE(int, &GM_CtrlMain_Event_Set_MesEnd_hook_ref, thiz);
+}
+
 int soloader_patch_mce(so_module *mod) {
     return 0;
 }
@@ -79,6 +92,9 @@ int soloader_patch_bio4(so_module *mod) {
     so_module_hook_symbol(mod, "_ZNK13Bio4_UserData9GetLangIdEv", (void *)&Bio4_UserData_GetLangId, NULL);
 
     Bio4_lang_id = _get_lang_id();
+
+    so_module_hook_symbol(mod, "_ZN13GM_CtrlLayout14Set_WindowTypeEll", (void *)&GM_CtrlLayout_Set_WindowType, &GM_CtrlLayout_Set_WindowType_hook_ref);
+    so_module_hook_symbol(mod, "_ZN17GM_CtrlMain_Event11_Set_MesEndEv", (void *)&GM_CtrlMain_Event_Set_MesEnd, &GM_CtrlMain_Event_Set_MesEnd_hook_ref);
 
     return 0;
 }
