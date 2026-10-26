@@ -71,7 +71,11 @@ int Bio4_UserData_GetLangId(Bio4_UserData *thiz) {
 
 so_hook_ref GM_CtrlLayout_Set_WindowType_hook_ref;
 void        GM_CtrlLayout_Set_WindowType(void *thiz, int type, int btn) {
-    bio4_window_type = type;
+    if (type == 2 && btn <= 0) {
+        bio4_window_type = 1;
+    } else {
+        bio4_window_type = type;
+    }
     SO_CONTINUE(int, &GM_CtrlLayout_Set_WindowType_hook_ref, thiz, type, btn);
 }
 
