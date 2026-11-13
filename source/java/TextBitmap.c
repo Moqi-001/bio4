@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,28 +38,37 @@ static jbyteArray CreateTextBitmap(jargs *args) {  // (String text, int x, int y
     jint        x    = JARG(args, jint);
     jint        y    = JARG(args, jint);
 
-    m_nWidStrText = 0;
-    m_nHeiStrText = 0;
-    jbyte *bitmap = (jbyte *)so_font_create_bitmap(m_pFont, text, m_FontSize, 0, &m_nWidStrText, &m_nHeiStrText);
+    so_bitmap *bitmap = so_font_create_text_bitmap(m_pFont, text, m_FontSize, 0);
+    if (!bitmap) {
+        m_nWidStrText = 0;
+        m_nHeiStrText = 0;
+        m_nWidText    = 0;
+        m_nWidText    = 0;
+        m_nSizeByte   = 0;
+        so_loge("[TextBitmap] CreateTextBitmap(%s,%d,%d): error!", text, x, y);
+        return JniNewByteArray(m_nSizeByte);
+    }
 
-    m_nWidText  = FixTextTextureSize(m_nWidStrText);  // 文字纹理宽度
-    m_nHeiText  = FixTextTextureSize(m_nHeiStrText);  // 文字纹理高度
-    m_nSizeByte = m_nWidText * m_nHeiText;
+    m_nWidStrText = bitmap->width;
+    m_nHeiStrText = bitmap->height;
+    m_nWidText    = FixTextTextureSize(m_nWidStrText);  // 文字纹理宽度
+    m_nHeiText    = FixTextTextureSize(m_nHeiStrText);  // 文字纹理高度
+    m_nSizeByte   = m_nWidText * m_nHeiText;
 
     jbyteArray result      = JniNewByteArray(m_nSizeByte);
     jbyte     *resultBytes = JniGetByteArrayElements(result, NULL);
     memset(resultBytes, 0, m_nSizeByte);
-    if (bitmap) {
-        jbyte *src = bitmap;
-        jbyte *dst = resultBytes;
 
-        for (int y = 0; y < m_nHeiStrText; y++) {
-            memcpy(dst, src, m_nWidStrText);
-            src += m_nWidStrText;
-            dst += m_nWidText;
-        }
-        free(bitmap);
+    jbyte *src = bitmap->pixels;
+    jbyte *dst = resultBytes;
+
+    for (int y = 0; y < m_nHeiStrText; y++) {
+        memcpy(dst, src, m_nWidStrText);
+        src += bitmap->pitch;
+        dst += m_nWidText;
     }
+    so_font_free_bitmap(bitmap);
+
     JniReleaseByteArrayElements(result, resultBytes, 0);
 
     return result;
@@ -68,15 +76,6 @@ static jbyteArray CreateTextBitmap(jargs *args) {  // (String text, int x, int y
 
 // static, "GetParam", "()[B"
 static jbyteArray GetParam() {
-    if (!m_TextParam) {
-        // 创建 m_TextParam 全局引用
-        m_TextParam = JniNewGlobalRefTake(JniNewByteArray(20));
-        if (!m_TextParam) {
-            so_loge("[TextBitmap] GetParam(): NewByteArray error! ");
-            return NULL;
-        }
-    }
-
     jbyte *paramBytes = JniGetByteArrayElements(m_TextParam, NULL);
     // int 转小端
     paramBytes[0]  = (jbyte)(m_nSizeByte >> 0);
@@ -137,7 +136,8 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(TextBitmap),
 };
 
-void TextBitmap_class_init() {
+void setup_TextBitmap() {
     JniCreateClass(&class_meta);
-    m_pFont = so_font_load(SO_TTF_PATH);
+    m_pFont     = so_font_load(SO_TTF_PATH);
+    m_TextParam = JniNewGlobalRefTake(JniNewByteArray(20));
 }

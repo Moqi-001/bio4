@@ -125,7 +125,7 @@ void Bio4PreActivity_onCreate(ABundle *savedInstanceState) {
     sThis->m_ArmMgr            = NULL;
     sThis->m_pView             = NULL;
     sThis->m_isLaunchHeapCheck = true;
-    sThis->m_nPrevTime         = JSystem_currentTimeMillis();
+    sThis->m_nPrevTime         = currentTimeMillis();
     sThis->m_isAppAlive        = false;
     sThis->m_isStereoFlg       = true;
     sThis->m_isDebugCnt        = 0;
@@ -137,12 +137,12 @@ void Bio4PreActivity_onCreate(ABundle *savedInstanceState) {
 
 static void mainLoop() {
     while (sThis->m_isAppAlive) {
-        jlong nCurrTime = JSystem_currentTimeMillis();
+        jlong nCurrTime = currentTimeMillis();
         jlong nDiffTime = nCurrTime - sThis->m_nPrevTime;
         if (nDiffTime < 44) {
             sceKernelDelayThread((44 - nDiffTime) * 1000);
         }
-        sThis->m_nPrevTime = JSystem_currentTimeMillis();
+        sThis->m_nPrevTime = currentTimeMillis();
 
         controls_poll();
         jint res = Bio4PreActivity_native_onDrawFrame(&_jni_env, Bio4PreActivity_jobject, NULL);
@@ -234,7 +234,7 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(Bio4PreActivity),
 };
 
-void Bio4PreActivity_class_init() {
+void setup_Bio4PreActivity() {
     // 创建 jclass
     Bio4PreActivity_jclass = JniCreateClass(&class_meta);
     // 创建 jobject

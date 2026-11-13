@@ -28,7 +28,7 @@ char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const c
 }
 
 jlong PLT_Time_GetMilliSeconds(void *thiz, jclass clazz) {  // 每帧都执行，原代码通过 JNI 查找并调用方法但不保存，hook 优化
-    return JSystem_currentTimeMillis();
+    return currentTimeMillis();
 }
 
 so_hook_ref GM_CtrlLayout_Set_WindowType_hook_ref;

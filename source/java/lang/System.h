@@ -3,8 +3,8 @@
 
 #include <so_jni/so_jni.h>
 
-void JSystem_class_init();
+void setup_java_lang_System();
 
-jlong JSystem_currentTimeMillis();
+jlong currentTimeMillis();
 
 #endif

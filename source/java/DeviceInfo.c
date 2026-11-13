@@ -29,6 +29,6 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(DeviceInfo),
 };
 
-void DeviceInfo_class_init() {
+void setup_DeviceInfo() {
     JniCreateClass(&class_meta);
 }

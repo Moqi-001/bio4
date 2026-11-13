@@ -43,7 +43,7 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(StereoViewAdapter),
 };
 
-void StereoViewAdapter_class_init() {
+void setup_StereoViewAdapter() {
     StereoViewAdapter_jclass  = JniCreateClass(&class_meta);
     StereoViewAdapter_jobject = JniNewGlobalRefTake(JniAllocObject(StereoViewAdapter_jclass));
     sInstance                 = (StereoViewAdapter *)JniGetObjectInstance(StereoViewAdapter_jobject);

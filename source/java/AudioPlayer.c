@@ -892,7 +892,7 @@ static jclassMeta class_meta = {
         .instance_size = sizeof(AudioPlayer),
 };
 
-void AudioPlayer_class_init() {
+void setup_AudioPlayer() {
     AudioPlayer_jclass  = JniCreateClass(&class_meta);
 
     AudioPlayer_jobject = JniNewGlobalRefTake(

@@ -1,6 +1,5 @@
 #include <stdarg.h>
 #include <stdatomic.h>
-#include <stdbool.h>
 
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/clib.h>
@@ -9,33 +8,45 @@
 
 #include "so_logger.h"
 
-static SceKernelLwMutexWork _log_mutex       = {0};
-static atomic_bool          _log_mutex_ready = false;
+static SceKernelLwMutexWork _log_mutex = {0};
+static volatile int         _log_once  = 0;
 
 static char _log_buffer_a[2048];
 static char _log_buffer_b[2048];
 
-static inline void _log_lock(void) {
-    if (!atomic_load_explicit(&_log_mutex_ready, memory_order_acquire)) {
-        sceKernelCreateLwMutex(&_log_mutex, "_log_lock", 0, 0, NULL);
-        atomic_store_explicit(&_log_mutex_ready, true, memory_order_release);
+static int _log_init() {
+    if (atomic_load(&_log_once) == 2) {
+        return 0;
     }
-    sceKernelLockLwMutex(&_log_mutex, 1, NULL);
+
+    int expected = 0;
+    if (atomic_compare_exchange_strong(&_log_once, &expected, 1)) {
+        sceKernelCreateLwMutex(&_log_mutex, "_log_lock", 0, 0, NULL);
+        atomic_store(&_log_once, 2);
+        return 0;
+    }
+
+    while (atomic_load(&_log_once) != 2) {
+        sceKernelDelayThread(1000);
+    }
+
+    return 0;
 }
 
-static inline void _log_unlock(void) {
-    sceKernelUnlockLwMutex(&_log_mutex, 1);
-}
+#define LOGGER_INIT   _log_init();
+#define LOGGER_LOCK   sceKernelLockLwMutex(&_log_mutex, 1, NULL);
+#define LOGGER_UNLOCK sceKernelUnlockLwMutex(&_log_mutex, 1);
 
 void so_log_printf(int t, const char *fmt, ...) {
-    _log_lock();
+    LOGGER_INIT
+    LOGGER_LOCK
 
     va_list args;
     va_start(args, fmt);
     sceClibVsnprintf(_log_buffer_a, sizeof(_log_buffer_a), fmt, args);
     va_end(args);
 
-    const char *prefix = "";
+    const char *prefix;
     switch (t) {
         case SO_LT_DEBUG:
             prefix = "[DEBUG] ";
@@ -52,10 +63,11 @@ void so_log_printf(int t, const char *fmt, ...) {
         case SO_LT_FATAL:
             prefix = "[FATAL] ";
             break;
-        case SO_LT_TEMP:
-            prefix = "[*TEMP*] ";
+        case SO_LT_ALWAYS:
+            prefix = "[LOG] ";
             break;
         default:
+            prefix = "";
             break;
     }
 
@@ -73,9 +85,10 @@ void so_log_printf(int t, const char *fmt, ...) {
     }
 #endif
 
-    _log_unlock();
-
     if (t == SO_LT_FATAL) {
+        sceKernelDelayThread(100000);
         sceKernelExitProcess(0);
     }
+
+    LOGGER_UNLOCK
 }

@@ -38,6 +38,6 @@ void Bio4PreActivity_onDestroy();
 void Bio4PreActivity_setStereoHard(const jboolean isEnable);
 void Bio4PreActivity_changeStereoHard(jboolean isEnable);
 
-void Bio4PreActivity_class_init();
+void setup_Bio4PreActivity();
 
 #endif

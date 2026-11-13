@@ -48,7 +48,8 @@ endif()
 
 file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
-file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c)
+file(GLOB_RECURSE SO_JAVA_SRC   deps/so_java/*.c deps/so_java/*.cpp)
+file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c deps/so_jni/*.S)
 file(GLOB_RECURSE SO_FONT_SRC   deps/so_font/*.c)
 
 file(GLOB_RECURSE SO_LIBC_SRC          deps/so_libs/libc/*.c)
@@ -68,7 +69,6 @@ add_executable(${CMAKE_PROJECT_NAME}
   ${SO_LINKER_SRC}
   ${SO_JNI_SRC}
   ${SO_FONT_SRC}
-  ${SO_BIONIC_SRC}
 
   ${SO_LIBC_SRC}
   ${SO_LIBCXX_SRC}

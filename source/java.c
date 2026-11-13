@@ -1,7 +1,3 @@
-#include <stddef.h>
-
-#include <so_jni/so_jni.h>
-
 #include "java/lang/System.h"
 
 #include "java/Accelerometer.h"
@@ -15,17 +11,17 @@
 #include "java/VideoAdapter.h"
 
 int soloader_setup_java() {
-    JSystem_class_init();
+    setup_java_lang_System();
 
-    Accelerometer_class_init();
-    AssetFileInfo_class_init();
-    AudioPlayer_class_init();
-    Bio4PreActivity_class_init();
-    DeviceInfo_class_init();
-    FileManager_class_init();
-    StereoViewAdapter_class_init();
-    TextBitmap_class_init();
-    VideoAdapter_class_init();
+    setup_Accelerometer();
+    setup_AssetFileInfo();
+    setup_AudioPlayer();
+    setup_Bio4PreActivity();
+    setup_DeviceInfo();
+    setup_FileManager();
+    setup_StereoViewAdapter();
+    setup_TextBitmap();
+    setup_VideoAdapter();
 
     return 0;
 }

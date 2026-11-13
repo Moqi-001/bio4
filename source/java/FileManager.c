@@ -40,6 +40,6 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(FileManager),
 };
 
-void FileManager_class_init() {
+void setup_FileManager() {
     JniCreateClass(&class_meta);
 }

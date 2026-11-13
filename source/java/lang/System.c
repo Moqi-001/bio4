@@ -5,7 +5,7 @@
 #include "System.h"
 
 // static, "currentTimeMillis", "()J"
-jlong JSystem_currentTimeMillis() {
+jlong currentTimeMillis() {
     struct timeval te;
     gettimeofday(&te, NULL);
     return (jlong)(te.tv_sec * 1000LL + te.tv_usec / 1000);
@@ -13,7 +13,7 @@ jlong JSystem_currentTimeMillis() {
 
 static jsymbol class_symbols[] = {
     // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("currentTimeMillis", "()J", &JSystem_currentTimeMillis),
+    JNI_SYMBOL_STATIC_METHOD("currentTimeMillis", "()J", &currentTimeMillis),
 };
 
 static jclassMeta class_meta = {
@@ -24,6 +24,6 @@ static jclassMeta class_meta = {
     .instance_size = 0,
 };
 
-void JSystem_class_init() {
+void setup_java_lang_System() {
     JniCreateClass(&class_meta);
 }

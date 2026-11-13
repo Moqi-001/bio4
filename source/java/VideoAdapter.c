@@ -66,6 +66,6 @@ static jclassMeta class_meta = {
     .instance_size = 0,
 };
 
-void VideoAdapter_class_init() {
+void setup_VideoAdapter() {
     JniCreateClass(&class_meta);
 }

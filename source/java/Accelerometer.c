@@ -67,7 +67,7 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(Accelerometer),
 };
 
-void Accelerometer_class_init() {
+void setup_Accelerometer() {
     Accelerometer_jclass                = JniCreateClass(&class_meta);
     Accelerometer_jobject               = JniNewGlobalRefTake(JniAllocObject(Accelerometer_jclass));
     Accelerometer_instance              = JniGetObjectInstance(Accelerometer_jobject);

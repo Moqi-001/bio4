@@ -20,14 +20,15 @@
  * glcompat.h:
  * Entry points that are NOT part of the OpenGL ES 1.1 / 2.0 cores, kept so
  * that code written against other GL dialects keeps compiling: desktop-GL
- * immediate mode and matrix calls, display lists, the GLU helpers, the
- * DSA-style entry points, a few GLES3/ANGLE entry points and vitaGL's
- * explicit matrix API. Cross-generation by nature (most of it is desktop
- * GL 1.x flavored, but it also carries newer GLES entry points).
+ * 1.x immediate mode, matrix and display-list calls, the GLU helpers,
+ * 3.x/4.x object-model entry points (VAO/samplers/UBO/instancing), the GL
+ * 4.5 DSA family, a few GLES3/ANGLE entry points and vitaGL's explicit
+ * matrix API. Cross-generation by nature, which is why it lives at the
+ * vitaGL/ root instead of under GLES/ or GLES2/.
  *
  * Best-effort only: declarations match the historical vitaGL signatures and
  * are not covered by the GLES conformance goal. The supported contract is
- * GLES/gl.h and GLES2/gl2.h; standard GLES users never need this file.
+ * the GLES/ and GLES2/ cores; standard GLES users never need this file.
  */
 
 #ifndef VITAGL_GLES_COMPAT_H

@@ -75,6 +75,6 @@ static jclassMeta class_meta = {
     .instance_size = sizeof(AssetFileInfo),
 };
 
-void AssetFileInfo_class_init() {
+void setup_AssetFileInfo() {
     JniCreateClass(&class_meta);
 }
