@@ -31,8 +31,6 @@ font_atlas *font_atlas_new(int font_size, int atlas_w, int atlas_h) {
         free(atlas);
         return NULL;
     }
-    atlas->pages->width  = atlas_w;
-    atlas->pages->height = atlas_h;
 
     atlas->htab = font_htab_new(256);
     if (!atlas->htab) {
@@ -72,12 +70,12 @@ const font_glyph *font_atlas_insert(font_atlas *atlas, uint32_t codepoint, const
 
     font_atlas_page *page = atlas->pages;
 
-    if (atlas->pen_x + ft_glyph->bitmap.width > page->width) {  // 行已满
+    if (atlas->pen_x + ft_glyph->bitmap.width > atlas->page_width) {  // 行已满
         atlas->pen_x = 0;
         atlas->pen_y += atlas->y_space;
         atlas->y_space = ft_glyph->bitmap.rows;
     }
-    if (atlas->pen_y + ft_glyph->bitmap.rows > page->height) {  // 页已满
+    if (atlas->pen_y + ft_glyph->bitmap.rows > atlas->page_height) {  // 页已满
         page = calloc(1, sizeof(font_atlas_page));
         if (!page) {
             free(new_glyph);
@@ -98,12 +96,13 @@ const font_glyph *font_atlas_insert(font_atlas *atlas, uint32_t codepoint, const
         atlas->pages   = page;
     }
 
-    new_glyph->bitmap_buffer = page->data + atlas->pen_x + atlas->pen_y * page->width;
-    new_glyph->bitmap_pitch  = page->width;
+    new_glyph->codepoint     = codepoint;
+    new_glyph->bitmap_buffer = page->data + atlas->pen_x + atlas->pen_y * atlas->page_width;
+    new_glyph->bitmap_pitch  = atlas->page_width;
     new_glyph->bitmap_width  = ft_glyph->bitmap.width;
     new_glyph->bitmap_height = ft_glyph->bitmap.rows;
-    new_glyph->bitmap_top    = ft_glyph->bitmap_top;
     new_glyph->bitmap_left   = ft_glyph->bitmap_left;
+    new_glyph->bitmap_top    = ft_glyph->bitmap_top;
     new_glyph->advance_x     = ft_glyph->advance.x >> 6;
     new_glyph->advance_y     = ft_glyph->advance.y >> 6;
 
@@ -133,7 +132,6 @@ const font_glyph *font_atlas_insert(font_atlas *atlas, uint32_t codepoint, const
 
     if (!font_htab_insert(atlas->htab, codepoint, new_glyph)) {
         free(new_glyph);
-        free(page);
         return NULL;
     }
 

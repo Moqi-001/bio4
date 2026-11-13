@@ -5,11 +5,7 @@
 extern "C" {
 #endif
 
-#include <so_jni/so_jni.h>
-
-#include "java/Bio4PreActivity.h"
-
-int soloader_java_init();
+int soloader_setup_java();
 
 #ifdef __cplusplus
 };

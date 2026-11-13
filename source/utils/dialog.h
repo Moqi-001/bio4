@@ -33,4 +33,4 @@ void fatal_error(const char *fmt, ...) __attribute__((noreturn));
 };
 #endif
 
-#endif // SOLOADER_DIALOG_H
+#endif  // SOLOADER_DIALOG_H

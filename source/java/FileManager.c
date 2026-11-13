@@ -1,16 +1,17 @@
 #include <psp2/io/fcntl.h>
+#include <so_jni/so_jni.h>
 
-#include "java.h"
-
-typedef struct FileManager {
+struct _FileManager {
     uint32_t reserved;
-} FileManager;
+};
+typedef struct _FileManager *FileManager;
 
-// static, "createFile", "(Ljava/lang/String;)Z"
-static jboolean createFile(jargs *args) {  // (String pFileName)
-    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
+static JClass sClass = NULL;
 
-    SceUID fd = sceIoOpen(pFileName, SCE_O_WRONLY | SCE_O_CREAT, 0777);
+static JBoolean createFile(JString pFileName) {
+    const char *pFileName_cstr = String_getUTFChars(pFileName);
+
+    SceUID fd = sceIoOpen(pFileName_cstr, SCE_O_WRONLY | SCE_O_CREAT, 0777);
     if (fd < 0) {
         return JNI_FALSE;
     }
@@ -19,27 +20,26 @@ static jboolean createFile(jargs *args) {  // (String pFileName)
     return JNI_TRUE;
 }
 
-// static, "deleteFile", "(Ljava/lang/String;)V"
-static void deleteFile(jargs *args) {  // (String pFileName)
-    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
+static void deleteFile(JString pFileName) {
+    const char *pFileName_cstr = String_getUTFChars(pFileName);
 
-    sceIoRemove(pFileName);
+    sceIoRemove(pFileName_cstr);
 }
 
-static jsymbol class_symbols[] = {
+static JSymbol class_symbols[] = {
     // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("createFile", "(Ljava/lang/String;)Z", &createFile),
-    JNI_SYMBOL_STATIC_METHOD("deleteFile", "(Ljava/lang/String;)V", &deleteFile),
+    JAVA_SYMBOL_STATIC_METHOD("createFile", "(Ljava/lang/String;)Z", &createFile),
+    JAVA_SYMBOL_STATIC_METHOD("deleteFile", "(Ljava/lang/String;)V", &deleteFile),
 };
 
-static jclassMeta class_meta = {
+static JClassMeta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/FileManager",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
-    .instance_size = sizeof(FileManager),
+    .instance_size = sizeof(struct _FileManager),
 };
 
-void FileManager_class_init() {
-    JniCreateClass(&class_meta);
+void setup_FileManager() {
+    sClass = JavaCreateClass(&class_meta);
 }

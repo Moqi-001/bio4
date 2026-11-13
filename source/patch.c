@@ -1,15 +1,10 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <so_common/so_logger.h>
-#include <so_common/so_utils.h>
+#include <so_java/java/lang/System.h>
 #include <so_jni/so_jni.h>
 #include <so_linker/so_linker.h>
-
-#include "java.h"
-#include "java/lang/System.h"
 
 typedef struct JavaCall JavaCall;
 jstring (*JavaCall_callStaticStringMethod)(JavaCall *thiz, const char *name, const char *sig);
@@ -28,7 +23,7 @@ char *JavaCall_callStaticCharPtrMethod(JavaCall *thiz, const char *name, const c
 }
 
 jlong PLT_Time_GetMilliSeconds(void *thiz, jclass clazz) {  // 每帧都执行，原代码通过 JNI 查找并调用方法但不保存，hook 优化
-    return JSystem_currentTimeMillis();
+    return currentTimeMillis();
 }
 
 so_hook_ref GM_CtrlLayout_Set_WindowType_hook_ref;
@@ -52,12 +47,13 @@ int soloader_patch_mce(so_module *mod) {
 }
 
 int soloader_patch_bio4(so_module *mod) {
-    JavaCall_callStaticStringMethod = so_module_find_symbol(mod, "_ZN8JavaCall22callStaticStringMethodEPKcS1_z");
-    so_module_hook_symbol(mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z", (void *)&JavaCall_callStaticCharPtrMethod, NULL);
-    so_module_hook_symbol(mod, "_ZN8PLT_Time15GetMilliSecondsEv", (void *)&PLT_Time_GetMilliSeconds, NULL);
+    JavaCall_callStaticStringMethod = so_module_find_export(mod, "_ZN8JavaCall22callStaticStringMethodEPKcS1_z");
 
-    so_module_hook_symbol(mod, "_ZN13GM_CtrlLayout14Set_WindowTypeEll", (void *)&GM_CtrlLayout_Set_WindowType, &GM_CtrlLayout_Set_WindowType_hook_ref);
-    so_module_hook_symbol(mod, "_ZN17GM_CtrlMain_Event11_Set_MesEndEv", (void *)&GM_CtrlMain_Event_Set_MesEnd, &GM_CtrlMain_Event_Set_MesEnd_hook_ref);
+    so_module_hook_export(mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z", &JavaCall_callStaticCharPtrMethod, NULL);
+    so_module_hook_export(mod, "_ZN8PLT_Time15GetMilliSecondsEv", &PLT_Time_GetMilliSeconds, NULL);
+
+    so_module_hook_export(mod, "_ZN13GM_CtrlLayout14Set_WindowTypeEll", &GM_CtrlLayout_Set_WindowType, &GM_CtrlLayout_Set_WindowType_hook_ref);
+    so_module_hook_export(mod, "_ZN17GM_CtrlMain_Event11_Set_MesEndEv", &GM_CtrlMain_Event_Set_MesEnd, &GM_CtrlMain_Event_Set_MesEnd_hook_ref);
 
     return 0;
 }

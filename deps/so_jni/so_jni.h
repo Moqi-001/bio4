@@ -5,78 +5,16 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 #include "jni.h"
 
-typedef struct jargs {
-    jboolean is_va;
-    union {
-        va_list       va;
-        const jvalue *vals;
-    };
-    jsize index;
-} jargs;
-
-#define JARG(args, T) _Generic((T)0,                                                                  \
-    jboolean: ((args)->is_va ? (jboolean)va_arg((args)->va, jint) : (args)->vals[(args)->index++].z), \
-    jbyte: ((args)->is_va ? va_arg((args)->va, jbyte) : (args)->vals[(args)->index++].b),             \
-    jchar: ((args)->is_va ? va_arg((args)->va, jchar) : (args)->vals[(args)->index++].c),             \
-    jshort: ((args)->is_va ? va_arg((args)->va, jshort) : (args)->vals[(args)->index++].s),           \
-    jint: ((args)->is_va ? va_arg((args)->va, jint) : (args)->vals[(args)->index++].i),               \
-    jlong: ((args)->is_va ? va_arg((args)->va, jlong) : (args)->vals[(args)->index++].j),             \
-    jfloat: ((args)->is_va ? (jfloat)va_arg((args)->va, jdouble) : (args)->vals[(args)->index++].f),  \
-    jdouble: ((args)->is_va ? va_arg((args)->va, jdouble) : (args)->vals[(args)->index++].d),         \
-    jobject: ((args)->is_va ? va_arg((args)->va, jobject) : (args)->vals[(args)->index++].l))
-
-enum {
-    JNI_SYMBOL_FLAGS_UNDEF  = 0,       // 未定义
-    JNI_SYMBOL_FLAGS_STATIC = 1 << 0,  // static
-    JNI_SYMBOL_FLAGS_NATIVE = 1 << 1,  // native（仅方法）
-    JNI_SYMBOL_FLAGS_METHOD = 1 << 2,  // 方法
-    JNI_SYMBOL_FLAGS_FIELD  = 1 << 3,  // 字段
-};
-
-typedef struct jsymbol {
-    char     *name;       // 符号名
-    char     *signature;  // 符号签名
-    uintptr_t addr;       // 符号地址
-    uint32_t  flags;      // 符号标志
-} jsymbol;
-
-#define JNI_SYMBOL_STATIC_METHOD(name, sig, p_func) \
-    {name, sig, (uintptr_t)(p_func), (JNI_SYMBOL_FLAGS_STATIC | JNI_SYMBOL_FLAGS_METHOD)}
-#define JNI_SYMBOL_STATIC_FIELD(name, sig, offset) \
-    {name, sig, (uintptr_t)(offset), (JNI_SYMBOL_FLAGS_STATIC | JNI_SYMBOL_FLAGS_FIELD)}
-#define JNI_SYMBOL_METHOD(name, sig, p_func) \
-    {name, sig, (uintptr_t)(p_func), JNI_SYMBOL_FLAGS_METHOD}
-#define JNI_SYMBOL_FIELD(name, sig, offset) \
-    {name, sig, (uintptr_t)(offset), JNI_SYMBOL_FLAGS_FIELD}
-#define JNI_SYMBOL_STATIC_NATIVE(name, sig, pp_func) \
-    {name, sig, (uintptr_t)(pp_func), JNI_SYMBOL_FLAGS_STATIC | JNI_SYMBOL_FLAGS_NATIVE | JNI_SYMBOL_FLAGS_METHOD}
-#define JNI_SYMBOL_NATIVE(name, sig, pp_func) \
-    {name, sig, (uintptr_t)(pp_func), JNI_SYMBOL_FLAGS_NATIVE | JNI_SYMBOL_FLAGS_METHOD}
-
-typedef struct jclassMeta {
-    char    *name;           // 类名
-    char    *super_name;     // 父类名
-    jsymbol *symbols;        // 符号数组
-    jsize    num_symbols;    // 符号数量
-    jsize    instance_size;  // 实例数据大小
-} jclassMeta;
-
-#define JNI_CALL_TYPE_NATIVE(_jtype, _func, ...)                                                \
-    ({                                                                                          \
-        JniPushLocalFrame(0);                                                                   \
-        _jtype  _ret = _func(__VA_ARGS__);                                                      \
-        jobject _ref = JniPopLocalFrame(_Generic((_jtype)0, jobject: (_ret), default: (NULL))); \
-        _Generic((_jtype)0, jobject: (_ref), default: (_ret));                                  \
-    })
-
-#define JNI_CALL_VOID_NATIVE(_func, ...) \
-    do {                                 \
-        JniPushLocalFrame(0);            \
-        _func(__VA_ARGS__);              \
-        JniPopLocalFrame(NULL);          \
-    } while (0)
+#include <so_java/java/lang/Array.h>
+#include <so_java/java/lang/Class.h>
+#include <so_java/java/lang/Object.h>
+#include <so_java/java/lang/String.h>
+#include <so_java/java/lang/types.h>
+#include <so_java/java/nio/Buffer.h>
 
 extern JavaVM _java_vm;
 extern JNIEnv _jni_env;
@@ -84,24 +22,32 @@ extern JNIEnv _jni_env;
 int  so_jni_init(void);
 void so_jni_fini(void);
 
-jclass   JniCreateClass(jclassMeta *meta);
+// ============================================
+// JNI <=> JAVA
+// ============================================
+JObject JniObjectToJava(jobject object);
+jobject JniNewLocalRefFromJava(JObject obj);
+jobject JniNewGlobalRefFromJava(JObject obj);
+jweak   JniNewWeakGlobalRefFromJava(JObject obj);
+
+// ============================================
+// JNI 标准函数实现
+// ============================================
 jclass   JniFindClass(const char *name);
 jclass   JniGetSuperclass(jclass clazz);
-jboolean JniIsAssignableFrom(jclass clazz1, jclass clazz2);
-jint     JniRegisterNatives(jclass clazz, const JNINativeMethod *methods, jint num_nethods);
+jboolean JniIsAssignableFrom(jclass from, jclass thiz);
+jint     JniRegisterNatives(jclass clazz, const JNINativeMethod *methods, jint num_methods);
 jint     JniUnregisterNatives(jclass clazz);
 
+jint    JniPushLocalFrame(jint capacity);
+jobject JniPopLocalFrame(jobject result);
 jobject JniNewLocalRef(jobject object);
 void    JniDeleteLocalRef(jobject object);
 jobject JniNewGlobalRef(jobject object);
-jobject JniNewGlobalRefTake(jobject object);  // 创建新全局引用并释放旧引用
 void    JniDeleteGlobalRef(jobject object);
-jint    JniPushLocalFrame(jint capacity);
-jobject JniPopLocalFrame(jobject result);
+jweak   JniNewWeakGlobalRef(jobject object);
+void    JniDeleteWeakGlobalRef(jweak object);
 
-void          *JniAllocInstance(jsize size);
-void          *JniGetObjectInstance(jobject object);
-jobject        JniCreateObject(jclass clazz, void *instance);
 jobject        JniAllocObject(jclass clazz);
 jobject        JniNewObject(jclass clazz, jmethodID methodID, ...);
 jobject        JniNewObjectV(jclass clazz, jmethodID methodID, va_list args);
@@ -114,13 +60,13 @@ jobjectRefType JniGetObjectRefType(jobject object);
 jstring      JniNewString(const jchar *utf16, jsize len);
 jsize        JniGetStringLength(jstring string);
 const jchar *JniGetStringChars(jstring string, jboolean *isCopy);
-int32_t      JniReleaseStringChars(jstring string, const jchar *utf16);
+void         JniReleaseStringChars(jstring string, const jchar *utf16);
 jint         JniGetStringRegion(jstring string, jsize start, jsize length, jchar *buf);
 
 jstring     JniNewStringUTF(const char *utf8);
 jsize       JniGetStringUTFLength(jstring string);
 const char *JniGetStringUTFChars(jstring string, jboolean *isCopy);
-int32_t     JniReleaseStringUTFChars(jstring string, const char *utf8);
+void        JniReleaseStringUTFChars(jstring string, const char *utf8);
 jint        JniGetStringUTFRegion(jstring string, jsize start, jsize length, char *buf);
 
 jlong JniGetArrayLength(jarray array);
@@ -178,6 +124,22 @@ jobject        JniNewDirectByteBuffer(void *address, jlong capacity);
 void          *JniGetDirectBufferAddress(jobject buffer);
 jlong          JniGetDirectBufferCapacity(jobject buffer);
 jobjectRefType JniGetObjectRefType(jobject object);
+
+jmethodID JniGetMethodID(const jclass clazz, const char *name, const char *sig);
+jfieldID  JniGetFieldID(const jclass clazz, const char *name, const char *sig);
+jmethodID JniGetStaticMethodID(const jclass clazz, const char *name, const char *sig);
+jfieldID  JniGetStaticFieldID(const jclass clazz, const char *name, const char *sig);
+
+// ============================================
+// JNI native 调用进出宏 (确保每次 native 函数调用后释放其创建的局部引用，防止内存泄漏)
+// ============================================
+#define ENTER_JNI_CALL(capacity) \
+    {                            \
+        JniPushLocalFrame(capacity);
+
+#define EXIT_JNI_CALL(result) \
+    JniPopLocalFrame(result); \
+    }
 
 #ifdef __cplusplus
 }

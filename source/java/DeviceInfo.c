@@ -3,32 +3,33 @@
 
 #include <so_jni/so_jni.h>
 
-#include "java.h"
-
-typedef struct DeviceInfo {
+struct _DeviceInfo {
     uint32_t reserved;
-} DeviceInfo;
+};
+typedef struct _DeviceInfo *DeviceInfo;
 
 #define FILES_PATH DATA_PATH
 
-// static, "getFilePath", "()Ljava/lang/String;"
-static jstring getFilePath() {
-    return JniNewStringUTF(FILES_PATH);
+static JClass  sClass    = NULL;
+static JString sFilePath = NULL;
+
+static JString getFilePath() {
+    return Object_retain(sFilePath);
 }
 
-static jsymbol class_symbols[] = {
-    // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("getFilePath", "()Ljava/lang/String;", &getFilePath),
+static JSymbol class_symbols[] = {
+    JAVA_SYMBOL_STATIC_METHOD("getFilePath", "()Ljava/lang/String;", &getFilePath),
 };
 
-static jclassMeta class_meta = {
+static JClassMeta class_meta = {
     .name          = "jp/co/capcom/android/bio4_LGUplus0119/DeviceInfo",
     .super_name    = NULL,
     .symbols       = class_symbols,
     .num_symbols   = sizeof(class_symbols) / sizeof(class_symbols[0]),
-    .instance_size = sizeof(DeviceInfo),
+    .instance_size = sizeof(struct _DeviceInfo),
 };
 
-void DeviceInfo_class_init() {
-    JniCreateClass(&class_meta);
+void setup_DeviceInfo() {
+    sClass    = JavaCreateClass(&class_meta);
+    sFilePath = String_newUTF(FILES_PATH);
 }

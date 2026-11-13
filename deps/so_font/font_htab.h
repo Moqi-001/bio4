@@ -1,10 +1,11 @@
-#ifndef INT_HTAB_H
-#define INT_HTAB_H
+#ifndef SO_FONT_HTAB_H
+#define SO_FONT_HTAB_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct font_htab font_htab;

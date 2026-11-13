@@ -1,43 +1,40 @@
 #ifndef BIO4_PRE_ACTIVITY_H
 #define BIO4_PRE_ACTIVITY_H
 
+#include <so_java/android/os/Bundle.h>
 #include <so_jni/so_jni.h>
 
-#include "android/Bundle.h"
+void setup_Bio4PreActivity();
 
-extern jclass  Bio4PreActivity_jclass;
-extern jobject Bio4PreActivity_jobject;
+JInt     Bio4PreActivity_native_onCreate(JObject ctx);
+void     Bio4PreActivity_native_onRestart(void);
+void     Bio4PreActivity_native_onStart(void);
+void     Bio4PreActivity_native_onResume(void);
+JBoolean Bio4PreActivity_native_onSurfaceCreated(JObject gl, JObject config, JInt width, JInt height);
+JBoolean Bio4PreActivity_native_onSurfaceChanged(JObject gl, JInt width, JInt height);
+JInt     Bio4PreActivity_native_onDrawFrame(JObject gl);
+void     Bio4PreActivity_native_onPause(void);
+void     Bio4PreActivity_native_onStop(void);
+void     Bio4PreActivity_native_onDestroy(void);
+void     Bio4PreActivity_native_onConfigurationChanged(JObject a3);
+JBoolean Bio4PreActivity_native_onKeyDown(JInt keyCode, JObject event);
+JBoolean Bio4PreActivity_native_onKeyUp(JInt keyCode, JObject event);
+JBoolean Bio4PreActivity_native_onTouchEvent(JInt a3, JInt a4, JInt a5);
+void     Bio4PreActivity_native_setStereoHard(JObject pView, JBoolean isEnable);
+void     Bio4PreActivity_native_onTouchBegan(JObject pTouchInfo, JFloat currX, JFloat currY, JFloat prevX, JFloat prevY);
+void     Bio4PreActivity_native_onTouchMoved(JObject pTouchInfo, JFloat currX, JFloat currY, JFloat prevX, JFloat prevY);
+void     Bio4PreActivity_native_onTouchEnded(JObject pTouchInfo, JFloat currX, JFloat currY, JFloat prevX, JFloat prevY);
+void     Bio4PreActivity_native_onTouchCancelled(JObject pTouchInfo, JFloat currX, JFloat currY, JFloat prevX, JFloat prevY);
+void     Bio4PreActivity_native_onShake(void);
 
-jint     Bio4PreActivity_native_onCreate(JNIEnv *env, jobject thiz, jobject ctx);
-void     Bio4PreActivity_native_onRestart(JNIEnv *env, jobject thiz);
-void     Bio4PreActivity_native_onStart(JNIEnv *env, jobject thiz);
-void     Bio4PreActivity_native_onResume(JNIEnv *env, jobject thiz);
-jboolean Bio4PreActivity_native_onSurfaceCreated(JNIEnv *env, jobject thiz, jobject gl, jobject config, jint width, jint height);
-jboolean Bio4PreActivity_native_onSurfaceChanged(JNIEnv *env, jobject thiz, jobject gl, jint width, jint height);
-jint     Bio4PreActivity_native_onDrawFrame(JNIEnv *env, jobject thiz, jobject gl);
-void     Bio4PreActivity_native_onPause(JNIEnv *env, jobject thiz);
-void     Bio4PreActivity_native_onStop(JNIEnv *env, jobject thiz);
-void     Bio4PreActivity_native_onDestroy(JNIEnv *env, jobject thiz);
-void     Bio4PreActivity_native_onConfigurationChanged(JNIEnv *env, jobject thiz, jobject a3);
-jboolean Bio4PreActivity_native_onKeyDown(JNIEnv *env, jobject thiz, jint keyCode, jobject event);
-jboolean Bio4PreActivity_native_onKeyUp(JNIEnv *env, jobject thiz, jint keyCode, jobject event);
-jboolean Bio4PreActivity_native_onTouchEvent(JNIEnv *env, jobject thiz, jint a3, jint a4, jint a5);
-void     Bio4PreActivity_native_setStereoHard(JNIEnv *env, jobject thiz, jobject pView, jboolean isEnable);
-void     Bio4PreActivity_native_onTouchBegan(JNIEnv *env, jobject thiz, jobject pTouchInfo, jfloat currX, jfloat currY, jfloat prevX, jfloat prevY);
-void     Bio4PreActivity_native_onTouchMoved(JNIEnv *env, jobject thiz, jobject pTouchInfo, jfloat currX, jfloat currY, jfloat prevX, jfloat prevY);
-void     Bio4PreActivity_native_onTouchEnded(JNIEnv *env, jobject thiz, jobject pTouchInfo, jfloat currX, jfloat currY, jfloat prevX, jfloat prevY);
-void     Bio4PreActivity_native_onTouchCancelled(JNIEnv *env, jobject thiz, jobject pTouchInfo, jfloat currX, jfloat currY, jfloat prevX, jfloat prevY);
-void     Bio4PreActivity_native_onShake(JNIEnv *env, jobject thiz);
-
-void Bio4PreActivity_onCreate(ABundle *savedInstanceState);
-void Bio4PreActivity_onStart();
-void Bio4PreActivity_onResume();
-void Bio4PreActivity_onPause();
-void Bio4PreActivity_onStop();
-void Bio4PreActivity_onDestroy();
-void Bio4PreActivity_setStereoHard(const jboolean isEnable);
-void Bio4PreActivity_changeStereoHard(jboolean isEnable);
-
-void Bio4PreActivity_class_init();
+void Bio4PreActivity_onCreate(Bundle savedInstanceState);
+void Bio4PreActivity_onStart(void);
+void Bio4PreActivity_onRestart(void);
+void Bio4PreActivity_onResume(void);
+void Bio4PreActivity_onPause(void);
+void Bio4PreActivity_onStop(void);
+void Bio4PreActivity_onDestroy(void);
+void Bio4PreActivity_setStereoHard(JBoolean isEnable);
+void Bio4PreActivity_changeStereoHard(JBoolean isEnable);
 
 #endif

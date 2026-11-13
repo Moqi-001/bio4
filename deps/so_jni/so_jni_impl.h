@@ -8,7 +8,6 @@
 
 #include "jni.h"
 
-#include "so_jni.h"
 #include "so_jni_internal.h"
 
 /*
@@ -28,16 +27,15 @@ jint AttachCurrentThread(JavaVM *vm, JNIEnv **p_env, void *thr_args) {
     }
 
     *p_env = &_jni_env;
+    JniInitLocalRefContext();
 
     so_logd("[JVM] AttachCurrentThread(%p,%p,%p): %d", vm, p_env, thr_args, JNI_OK);
     return JNI_OK;
 }
 
 jint DetachCurrentThread(JavaVM *vm) {
-    // Since we don't operate the actual Java VM, we don't need to care about
-    // it being available only in one thread. Anyway, due to this restriction,
-    // client applications are guaranteed to use JNI in a safe way.
-    so_logd("[JVM] DetachCurrentThread(%p): ignored", vm);
+    JniFiniLocalRefContext();
+    so_logd("[JVM] DetachCurrentThread(%p)", vm);
     return JNI_OK;
 }
 
@@ -78,7 +76,7 @@ jint GetVersion(JNIEnv *env) {
 
 jclass DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize bufLen) {
     // Supposed to load Java class from `.class`-containing `buf`. Can not be implemented.
-    so_loge("[JNI] DefineClass(%p,'%s',%p,%p,%d): not implemented", env, name, loader, buf, bufLen);
+    so_loge("[JNI] DefineClass(%p,'%s',%p,%p,%d): not implemented!", env, name, loader, buf, bufLen);
     return NULL;
 }
 
@@ -104,53 +102,53 @@ jclass GetSuperclass(JNIEnv *env, jclass clazz) {
     return super_cls;
 }
 
-jboolean IsAssignableFrom(JNIEnv *env, jclass clazz1, jclass clazz2) {
-    jboolean result = JniIsAssignableFrom(clazz1, clazz2);
-    so_logd("[JNI] IsAssignableFrom(%p,%p,%p): %u", env, clazz1, clazz2, result);
+jboolean IsAssignableFrom(JNIEnv *env, jclass from, jclass thiz) {
+    jboolean result = JniIsAssignableFrom(thiz, from);
+    so_logd("[JNI] IsAssignableFrom(%p,%p,%p): %u", env, from, thiz, result);
     return result;
 }
 
 jmethodID FromReflectedMethod(JNIEnv *env, jobject method) {
-    so_logw("[JNI] FromReflectedMethod(%p,%p): not implemented", env, method);
+    so_logw("[JNI] FromReflectedMethod(%p,%p): not implemented!", env, method);
     return NULL;
 }
 
 jfieldID FromReflectedField(JNIEnv *env, jobject field) {
-    so_logw("[JNI] FromReflectedField(%p,%p): not implemented", env, field);
+    so_logw("[JNI] FromReflectedField(%p,%p): not implemented!", env, field);
     return NULL;
 }
 
 jobject ToReflectedMethod(JNIEnv *env, jclass clazz, jmethodID methodID, jboolean isStatic) {
-    so_logw("[JNI] ToReflectedMethod(%p,%p,%p,%d): not implemented", env, clazz, methodID, isStatic);
+    so_logw("[JNI] ToReflectedMethod(%p,%p,%p,%d): not implemented!", env, clazz, methodID, isStatic);
     return NULL;
 }
 
 jobject ToReflectedField(JNIEnv *env, jclass clazz, jfieldID fieldID, jboolean isStatic) {
-    so_logw("[JNI] ToReflectedField(%p,%p,%p,%d): not implemented", env, clazz, fieldID, isStatic);
+    so_logw("[JNI] ToReflectedField(%p,%p,%p,%d): not implemented!", env, clazz, fieldID, isStatic);
     return NULL;
 }
 
 jint Throw(JNIEnv *env, jthrowable obj) {
-    so_logw("[JNI] Throw(%p,%p): not implemented", env, obj);
+    so_logw("[JNI] Throw(%p,%p): not implemented!", env, obj);
     return JNI_OK;
 }
 
 jint ThrowNew(JNIEnv *env, jclass clazz, const char *message) {
-    so_logw("[JNI] ThrowNew(%p,%p,'%s'): not implemented", env, clazz, message);
+    so_logw("[JNI] ThrowNew(%p,%p,'%s'): not implemented!", env, clazz, message);
     return JNI_OK;
 }
 
 jthrowable ExceptionOccurred(JNIEnv *env) {
-    so_logd("[JNI] ExceptionOccurred(%p): ignored", env);
+    so_logw("[JNI] ExceptionOccurred(%p): not implemented!", env);
     return NULL;
 }
 
 void ExceptionDescribe(JNIEnv *env) {
-    so_logd("[JNI] ExceptionDescribe(%p): ignored", env);
+    so_logw("[JNI] ExceptionDescribe(%p): not implemented!", env);
 }
 
 void ExceptionClear(JNIEnv *env) {
-    so_logd("[JNI] ExceptionClear(%p): ignored", env);
+    so_logw("[JNI] ExceptionClear(%p): not implemented!", env);
 }
 
 void FatalError(JNIEnv *env, const char *msg) {
@@ -181,13 +179,13 @@ jobject NewGlobalRef(JNIEnv *env, jobject obj) {
 }
 
 void DeleteGlobalRef(JNIEnv *env, jobject obj) {
-    JniDeleteGlobalRef(obj);
     so_logd("[JNI] DeleteGlobalRef(%p,%p)", env, obj);
+    JniDeleteGlobalRef(obj);
 }
 
 void DeleteLocalRef(JNIEnv *env, jobject obj) {
-    JniDeleteLocalRef(obj);
     so_logd("[JNI] DeleteLocalRef(%p,%p)", env, obj);
+    JniDeleteLocalRef(obj);
 }
 
 jboolean IsSameObject(JNIEnv *env, jobject ref1, jobject ref2) {
@@ -208,7 +206,7 @@ jobject NewLocalRef(JNIEnv *env, jobject obj) {
 }
 
 jint EnsureLocalCapacity(JNIEnv *env, jint capacity) {
-    so_logd("[JNI] EnsureLocalCapacity(%p,%d)", env, capacity);
+    so_logw("[JNI] EnsureLocalCapacity(%p,%d): not implemented!", env, capacity);
     return JNI_OK;
 }
 
@@ -224,30 +222,21 @@ jobject AllocObject(JNIEnv *env, jclass clazz) {
 }
 
 jobject NewObject(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-    if (!clazz || !methodID) {
-        so_logd("[JNI] NewObject(%p,%p,%p,...): invalid arguments!", env, clazz, methodID);
-        return NULL;
-    }
-
     va_list args;
     va_start(args, methodID);
     jobject obj = JniNewObjectV(clazz, methodID, args);
+    va_end(args);
+
     if (!obj) {
         so_loge("[JNI] NewObject(%p,%p,%p,...): error!", env, clazz, methodID);
         return NULL;
     }
-    va_end(args);
 
     so_logd("[JNI] NewObject(%p,%p,%p,...): %p", env, clazz, methodID, obj);
     return obj;
 }
 
 jobject NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
-    if (!clazz || !methodID) {
-        so_logd("[JNI] NewObjectV(%p,%p,%p,args): invalid arguments!", env, clazz, methodID);
-        return NULL;
-    }
-
     jobject obj = JniNewObjectV(clazz, methodID, args);
     if (!obj) {
         so_loge("[JNI] NewObjectV(%p,%p,%p,args): error!", env, clazz, methodID);
@@ -259,11 +248,6 @@ jobject NewObjectV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) 
 }
 
 jobject NewObjectA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
-    if (!clazz || !methodID) {
-        so_logd("[JNI] NewObjectA(%p,%p,%p,args): invalid arguments!", env, clazz, methodID);
-        return NULL;
-    }
-
     jobject obj = JniNewObjectA(clazz, methodID, args);
     if (!obj) {
         so_loge("[JNI] NewObjectA(%p,%p,%p,args): error!", env, clazz, methodID);
@@ -292,80 +276,54 @@ jboolean IsInstanceOf(JNIEnv *env, jobject object, jclass clazz) {
 }
 
 jmethodID GetMethodID(JNIEnv *env, jclass clazz, const char *name, const char *sig) {
-    if (!clazz || !name || !sig) {
-        so_loge("[JNI] GetMethodID(%p,%p,'%s','%s'): invalid arguments!", env, clazz, name, sig);
+    jmethodID methodID = JniGetMethodID(clazz, name, sig);
+    if (!methodID) {
+        so_loge("[JNI] GetMethodID(%p,%p,'%s','%s'): not found! (%s)", env, clazz, name, sig, JniGetClassName(clazz));
         return NULL;
     }
 
-    const jsymbol *sym = JniFindMethod(clazz, name, sig, 0);
-    if (!sym) {
-        so_loge("[JNI] GetMethodID(%p,%p,'%s','%s'): not found!", env, clazz, name, sig);
-        return NULL;
-    }
-
-    jmethodID id = (jmethodID)sym;
-    so_logd("[JNI] GetMethodID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, id);
-    return id;
+    so_logd("[JNI] GetMethodID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, methodID);
+    return methodID;
 }
 
-#define CALL_TYPE_METHOD(_jtype, _jname)                                                                  \
-    _jtype Call##_jname##Method(JNIEnv *env, jobject obj, jmethodID methodID, ...) {                      \
-        if (!obj || !methodID) {                                                                          \
-            so_loge("[JNI] Call" #_jname "Method(%p,%p,%p,...): invalid arguments!", env, obj, methodID); \
-            return (_jtype)0;                                                                             \
-        }                                                                                                 \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                   \
-        if (!sym->addr) {                                                                                 \
-            so_loge("[JNI] Call" #_jname "Method(%p,%p,%p,...): invalid methodID!", env, obj, methodID);  \
-            return (_jtype)0;                                                                             \
-        }                                                                                                 \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                    \
-        MethodFunc method = (MethodFunc)sym->addr;                                                        \
-        va_list    args;                                                                                  \
-        va_start(args, methodID);                                                                         \
-        jargs  jargs  = {.is_va = 1, .va = args, .index = 0};                                             \
-        _jtype result = method(JniGetObjectInstance(obj), &jargs);                                        \
-        va_end(args);                                                                                     \
-        so_logd("[JNI] Call" #_jname "Method(%p,%p,%p,...): ('%s')", env, obj, methodID, sym->name);      \
-        return result;                                                                                    \
+#define CALL_TYPE_METHOD(_jtype, _jname)                                                                                  \
+    _jtype Call##_jname##Method(JNIEnv *env, jobject obj, jmethodID methodID, ...) {                                      \
+        jint    ret;                                                                                                      \
+        _jtype  result;                                                                                                   \
+        va_list args;                                                                                                     \
+        va_start(args, methodID);                                                                                         \
+        ret = JniCallCommonMethodV(&result, obj, methodID, args);                                                         \
+        va_end(args);                                                                                                     \
+        if (ret != JNI_OK) {                                                                                              \
+            so_loge("[JNI] Call" #_jname "Method(%p,%p,%p,args): error!", env, obj, methodID);                            \
+            return (_jtype)0;                                                                                             \
+        }                                                                                                                 \
+        so_logd("[JNI] Call" #_jname "Method(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                    \
     }
 
-#define CALL_TYPE_METHOD_V(_jtype, _jname)                                                                  \
-    _jtype Call##_jname##MethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {              \
-        if (!obj || !methodID) {                                                                            \
-            so_loge("[JNI] Call" #_jname "MethodV(%p,%p,%p,args): invalid arguments!", env, obj, methodID); \
-            return (_jtype)0;                                                                               \
-        }                                                                                                   \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                     \
-        if (!sym->addr) {                                                                                   \
-            so_loge("[JNI] Call" #_jname "MethodV(%p,%p,%p,args): invalid methodID!", env, obj, methodID);  \
-            return (_jtype)0;                                                                               \
-        }                                                                                                   \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                      \
-        MethodFunc method = (MethodFunc)sym->addr;                                                          \
-        jargs      jargs  = {.is_va = 1, .va = args, .index = 0};                                           \
-        _jtype     result = method(JniGetObjectInstance(obj), &jargs);                                      \
-        so_logd("[JNI] Call" #_jname "MethodV(%p,%p,%p,args): ('%s')", env, obj, methodID, sym->name);      \
-        return result;                                                                                      \
+#define CALL_TYPE_METHOD_V(_jtype, _jname)                                                                                 \
+    _jtype Call##_jname##MethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {                             \
+        _jtype result;                                                                                                     \
+        jint   ret = JniCallCommonMethodV(&result, obj, methodID, args);                                                   \
+        if (ret != JNI_OK) {                                                                                               \
+            so_loge("[JNI] Call" #_jname "MethodV(%p,%p,%p,args): error!", env, obj, methodID);                            \
+            return (_jtype)0;                                                                                              \
+        }                                                                                                                  \
+        so_logd("[JNI] Call" #_jname "MethodV(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                     \
     }
 
-#define CALL_TYPE_METHOD_A(_jtype, _jname)                                                                  \
-    _jtype Call##_jname##MethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {        \
-        if (!obj || !methodID) {                                                                            \
-            so_loge("[JNI] Call" #_jname "MethodA(%p,%p,%p,args): invalid arguments!", env, obj, methodID); \
-            return (_jtype)0;                                                                               \
-        }                                                                                                   \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                     \
-        if (!sym->addr) {                                                                                   \
-            so_loge("[JNI] Call" #_jname "MethodA(%p,%p,%p,args): invalid methodID!", env, obj, methodID);  \
-            return (_jtype)0;                                                                               \
-        }                                                                                                   \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                      \
-        MethodFunc method = (MethodFunc)sym->addr;                                                          \
-        jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};                                         \
-        _jtype     result = method(JniGetObjectInstance(obj), &jargs);                                      \
-        so_logd("[JNI] Call" #_jname "MethodA(%p,%p,%p,args): ('%s')", env, obj, methodID, sym->name);      \
-        return result;                                                                                      \
+#define CALL_TYPE_METHOD_A(_jtype, _jname)                                                                                 \
+    _jtype Call##_jname##MethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {                       \
+        _jtype result;                                                                                                     \
+        jint   ret = JniCallCommonMethodA(&result, obj, methodID, args);                                                   \
+        if (ret != JNI_OK) {                                                                                               \
+            so_loge("[JNI] Call" #_jname "MethodA(%p,%p,%p,args): error!", env, obj, methodID);                            \
+            return (_jtype)0;                                                                                              \
+        }                                                                                                                  \
+        so_logd("[JNI] Call" #_jname "MethodA(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                     \
     }
 
 CALL_TYPE_METHOD(jobject, Object)
@@ -397,132 +355,76 @@ CALL_TYPE_METHOD_V(jdouble, Double)
 CALL_TYPE_METHOD_A(jdouble, Double)
 
 void CallVoidMethod(JNIEnv *env, jobject obj, jmethodID methodID, ...) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallVoidMethod(%p,%p,%p,...): invalid arguments!", env, obj, methodID);
-        return;
-    }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallVoidMethod(%p,%p,%p,...): invalid methodID!", env, obj, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    va_list    args;
+    jint ret;
+
+    va_list args;
     va_start(args, methodID);
-    jargs jargs = {.is_va = 1, .va = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
+    ret = JniCallCommonMethodV(NULL, obj, methodID, args);
     va_end(args);
-    so_logd("[JNI] CallVoidMethod(%p,%p,%p,...): ('%s')", env, obj, methodID, sym->name);
+
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallVoidMethod(%p,%p,%p,args): error!", env, obj, methodID);
+        return;
+    }
+    so_logd("[JNI] CallVoidMethod(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallVoidMethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallVoidMethodV(%p,%p,%p,args): invalid arguments!", env, obj, methodID);
+    jint ret = JniCallCommonMethodV(NULL, obj, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallVoidMethodV(%p,%p,%p,args): error!", env, obj, methodID);
         return;
     }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallVoidMethodV(%p,%p,%p,args): invalid methodID!", env, obj, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 1, .va = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
-    so_logd("[JNI] CallVoidMethodV(%p,%p,%p,args): ('%s')", env, obj, methodID, sym->name);
+    so_logd("[JNI] CallVoidMethodV(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallVoidMethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallVoidMethodA(%p,%p,%p,args): invalid arguments!", env, obj, methodID);
+    jint ret = JniCallCommonMethodA(NULL, obj, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallVoidMethodA(%p,%p,%p,args): error!", env, obj, methodID);
         return;
     }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallVoidMethodA(%p,%p,%p,args): invalid methodID!", env, obj, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
-    so_logd("[JNI] CallVoidMethodA(%p,%p,%p,args): ('%s')", env, obj, methodID, sym->name);
+    so_logd("[JNI] CallVoidMethodA(%p,%p,%p,args): ('%s')", env, obj, methodID, ((JniMethod *)methodID)->name);
 }
 
-#define CALL_NONVIRT_TYPE_METHOD(_jtype, _jname)                                                                              \
-    _jtype CallNonvirtual##_jname##Method(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {                  \
-        if (!obj || !clazz || !methodID) {                                                                                    \
-            so_loge("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,...): invalid arguments!", env, obj, clazz, methodID); \
-            return (_jtype)0;                                                                                                 \
-        }                                                                                                                     \
-        const jsymbol *ori_sym = (const jsymbol *)methodID;                                                                   \
-        if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {                                                                       \
-            so_loge("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,...): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                 \
-        }                                                                                                                     \
-        const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);                                      \
-        if (!sym || !sym->addr) {                                                                                             \
-            so_loge("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,...): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                 \
-        }                                                                                                                     \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                                        \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                            \
-        va_list    args;                                                                                                      \
-        va_start(args, methodID);                                                                                             \
-        jargs  jargs  = {.is_va = 1, .va = args, .index = 0};                                                                 \
-        _jtype result = method(JniGetObjectInstance(obj), &jargs);                                                            \
-        va_end(args);                                                                                                         \
-        so_logd("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,...): ('%s')", env, obj, clazz, methodID, sym->name);      \
-        return result;                                                                                                        \
+#define CALL_NONVIRT_TYPE_METHOD(_jtype, _jname)                                                                                              \
+    _jtype CallNonvirtual##_jname##Method(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {                                  \
+        jint    ret;                                                                                                                          \
+        _jtype  result;                                                                                                                       \
+        va_list args;                                                                                                                         \
+        va_start(args, methodID);                                                                                                             \
+        ret = JniCallNonvirtualCommonMethodV(&result, obj, clazz, methodID, args);                                                            \
+        va_end(args);                                                                                                                         \
+        if (ret != JNI_OK) {                                                                                                                  \
+            so_loge("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                                 \
+        }                                                                                                                                     \
+        so_logd("[JNI] CallNonvirtual" #_jname "Method(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                                        \
     }
 
-#define CALL_NONVIRT_TYPE_METHOD_V(_jtype, _jname)                                                                              \
-    _jtype CallNonvirtual##_jname##MethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {          \
-        if (!obj || !clazz || !methodID) {                                                                                      \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): invalid arguments!", env, obj, clazz, methodID); \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        const jsymbol *ori_sym = (const jsymbol *)methodID;                                                                     \
-        if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {                                                                         \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);                                        \
-        if (!sym || !sym->addr) {                                                                                               \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                                          \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                              \
-        jargs      jargs  = {.is_va = 1, .va = args, .index = 0};                                                               \
-        _jtype     result = method(JniGetObjectInstance(obj), &jargs);                                                          \
-        so_logd("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, sym->name);      \
-        return result;                                                                                                          \
+#define CALL_NONVIRT_TYPE_METHOD_V(_jtype, _jname)                                                                                             \
+    _jtype CallNonvirtual##_jname##MethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {                         \
+        _jtype result;                                                                                                                         \
+        jint   ret = JniCallNonvirtualCommonMethodV(&result, obj, clazz, methodID, args);                                                      \
+        if (ret != JNI_OK) {                                                                                                                   \
+            so_loge("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                                  \
+        }                                                                                                                                      \
+        so_logd("[JNI] CallNonvirtual" #_jname "MethodV(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                                         \
     }
 
-#define CALL_NONVIRT_TYPE_METHOD_A(_jtype, _jname)                                                                              \
-    _jtype CallNonvirtual##_jname##MethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {    \
-        if (!obj || !clazz || !methodID) {                                                                                      \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): invalid arguments!", env, obj, clazz, methodID); \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        const jsymbol *ori_sym = (const jsymbol *)methodID;                                                                     \
-        if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {                                                                         \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);                                        \
-        if (!sym || !sym->addr) {                                                                                               \
-            so_loge("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);  \
-            return (_jtype)0;                                                                                                   \
-        }                                                                                                                       \
-        typedef _jtype (*MethodFunc)(void *, jargs *);                                                                          \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                              \
-        jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};                                                             \
-        _jtype     result = method(JniGetObjectInstance(obj), &jargs);                                                          \
-        so_logd("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, sym->name);      \
-        return result;                                                                                                          \
+#define CALL_NONVIRT_TYPE_METHOD_A(_jtype, _jname)                                                                                             \
+    _jtype CallNonvirtual##_jname##MethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {                   \
+        _jtype result;                                                                                                                         \
+        jint   ret = JniCallNonvirtualCommonMethodA(&result, obj, clazz, methodID, args);                                                      \
+        if (ret != JNI_OK) {                                                                                                                   \
+            so_loge("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                                  \
+        }                                                                                                                                      \
+        so_logd("[JNI] CallNonvirtual" #_jname "MethodA(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                                         \
     }
 
 CALL_NONVIRT_TYPE_METHOD(jobject, Object)
@@ -554,87 +456,47 @@ CALL_NONVIRT_TYPE_METHOD_V(jdouble, Double)
 CALL_NONVIRT_TYPE_METHOD_A(jdouble, Double)
 
 void CallNonvirtualVoidMethod(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, ...) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,...): invalid arguments!", env, obj, clazz, methodID);
-        return;
-    }
-    const jsymbol *ori_sym = (const jsymbol *)methodID;
-    if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {
-        so_loge("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,...): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);
-    if (!sym || !sym->addr) {
-        so_loge("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,...): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    va_list    args;
+    jint ret;
+
+    va_list args;
     va_start(args, methodID);
-    jargs jargs = {.is_va = 1, .va = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
+    ret = JniCallNonvirtualCommonMethodV(NULL, obj, clazz, methodID, args);
     va_end(args);
-    so_logd("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,...): ('%s')", env, obj, clazz, methodID, sym->name);
+
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);
+        return;
+    }
+    so_logd("[JNI] CallNonvirtualVoidMethod(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallNonvirtualVoidMethodV(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, va_list args) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): invalid arguments!", env, obj, clazz, methodID);
+    jint ret = JniCallNonvirtualCommonMethodV(NULL, obj, clazz, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);
         return;
     }
-    const jsymbol *ori_sym = (const jsymbol *)methodID;
-    if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {
-        so_loge("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);
-    if (!sym || !sym->addr) {
-        so_loge("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 1, .va = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
-    so_logd("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, sym->name);
+    so_logd("[JNI] CallNonvirtualVoidMethodV(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallNonvirtualVoidMethodA(JNIEnv *env, jobject obj, jclass clazz, jmethodID methodID, const jvalue *args) {
-    if (!obj || !methodID) {
-        so_loge("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): invalid arguments!", env, obj, clazz, methodID);
+    jint ret = JniCallNonvirtualCommonMethodA(NULL, obj, clazz, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): error!", env, obj, clazz, methodID);
         return;
     }
-    const jsymbol *ori_sym = (const jsymbol *)methodID;
-    if (ori_sym->flags & JNI_SYMBOL_FLAGS_STATIC) {
-        so_loge("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    const jsymbol *sym = JniFindMethod(clazz, ori_sym->name, ori_sym->signature, 0);
-    if (!sym || !sym->addr) {
-        so_loge("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): invalid methodID!", env, obj, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(void *, jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};
-    method(JniGetObjectInstance(obj), &jargs);
-    so_logd("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, sym->name);
+    so_logd("[JNI] CallNonvirtualVoidMethodA(%p,%p,%p,%p,args): ('%s')", env, obj, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name, const char *sig) {
-    if (!clazz || !name || !sig) {
-        so_loge("[JNI] GetFieldID(%p,%p,'%s','%s'): invalid arguments!", env, clazz, name, sig);
+    jfieldID fieldID = JniGetFieldID(clazz, name, sig);
+    if (!fieldID) {
+        so_loge("[JNI] GetFieldID(%p,%p,'%s','%s'): not found! (%s)", env, clazz, name, sig, JniGetClassName(clazz));
         return NULL;
     }
-    const jsymbol *sym = JniFindField(clazz, name, sig, 0);
-    if (!sym) {
-        so_loge("[JNI] GetFieldID(%p,%p,'%s','%s'): not found!", env, clazz, name, sig);
-        return NULL;
-    }
-    jfieldID id = (jfieldID)sym;
-    so_logd("[JNI] GetFieldID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, id);
-    return id;
+
+    so_logd("[JNI] GetFieldID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, fieldID);
+    return fieldID;
 }
 
 #define GET_TYPE_FIELD(_jtype, _jname)                                                             \
@@ -643,8 +505,8 @@ jfieldID GetFieldID(JNIEnv *env, jclass clazz, const char *name, const char *sig
             so_loge("[JNI] Get" #_jname "Field(%p,%p,%p): invalid arguments!", env, obj, fieldID); \
             return (_jtype)0;                                                                      \
         }                                                                                          \
-        const jsymbol *sym      = (const jsymbol *)fieldID;                                        \
-        void          *instance = JniGetObjectInstance(obj);                                       \
+        const JSymbol *sym      = (const JSymbol *)fieldID;                                        \
+        void          *instance = JniObjectToJava(obj);                                            \
         if (!instance) {                                                                           \
             so_loge("[JNI] Get" #_jname "Field(%p,%p,%p): invalid object!", env, obj, fieldID);    \
             return (_jtype)0;                                                                      \
@@ -670,8 +532,8 @@ GET_TYPE_FIELD(jdouble, Double)
             so_loge("[JNI] Set" #_jname "Field(%p,%p,%p): invalid arguments!", env, obj, fieldID); \
             return;                                                                                \
         }                                                                                          \
-        const jsymbol *sym      = (const jsymbol *)fieldID;                                        \
-        void          *instance = JniGetObjectInstance(obj);                                       \
+        const JSymbol *sym      = (const JSymbol *)fieldID;                                        \
+        void          *instance = JniObjectToJava(obj);                                            \
         if (!instance) {                                                                           \
             so_loge("[JNI] Set" #_jname "Field(%p,%p,%p): invalid object!", env, obj, fieldID);    \
             return;                                                                                \
@@ -691,79 +553,56 @@ SET_TYPE_FIELD(jfloat, Float)
 SET_TYPE_FIELD(jdouble, Double)
 
 jmethodID GetStaticMethodID(JNIEnv *env, jclass clazz, const char *name, const char *sig) {
-    if (!clazz || !name || !sig) {
-        so_loge("[JNI] GetStaticMethodID(%p,%p,'%s','%s'): invalid arguments!", env, clazz, name, sig);
+    jmethodID methodID = JniGetStaticMethodID(clazz, name, sig);
+    if (!methodID) {
+        so_loge("[JNI] GetStaticMethodID(%p,%p,'%s','%s'): not found! (%s)", env, clazz, name, sig, JniGetClassName(clazz));
         return NULL;
     }
-    const jsymbol *sym = JniFindMethod(clazz, name, sig, 1);
-    if (!sym) {
-        so_loge("[JNI] GetStaticMethodID(%p,%p,'%s','%s'): not found!", env, clazz, name, sig);
-        return NULL;
-    }
-    jmethodID id = (jmethodID)sym;
-    so_logd("[JNI] GetStaticMethodID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, id);
-    return id;
+
+    so_logd("[JNI] GetStaticMethodID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, methodID);
+    return methodID;
 }
 
-#define CALL_STATIC_TYPE_METHOD(_jtype, _jname)                                                                   \
-    _jtype CallStatic##_jname##Method(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {                       \
-        if (!clazz || !methodID) {                                                                                \
-            so_loge("[JNI] CallStatic" #_jname "Method(%p,%p,%p,...): invalid arguments!", env, clazz, methodID); \
-            return (_jtype)0;                                                                                     \
-        }                                                                                                         \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                           \
-        if (!sym->addr) {                                                                                         \
-            so_loge("[JNI] CallStatic" #_jname "Method(%p,%p,%p,...): invalid methodID!", env, clazz, methodID);  \
-            return (_jtype)0;                                                                                     \
-        }                                                                                                         \
-        typedef _jtype (*MethodFunc)(jargs *);                                                                    \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                \
-        va_list    args;                                                                                          \
-        va_start(args, methodID);                                                                                 \
-        jargs  jargs  = {.is_va = 1, .va = args, .index = 0};                                                     \
-        _jtype result = method(&jargs);                                                                           \
-        va_end(args);                                                                                             \
-        so_logd("[JNI] CallStatic" #_jname "Method(%p,%p,%p,...): ('%s')", env, clazz, methodID, sym->name);      \
-        return result;                                                                                            \
+#define CALL_STATIC_TYPE_METHOD(_jtype, _jname)                                                                                   \
+    _jtype CallStatic##_jname##Method(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {                                       \
+        jint    ret;                                                                                                              \
+        _jtype  result;                                                                                                           \
+        va_list args;                                                                                                             \
+        va_start(args, methodID);                                                                                                 \
+        ret = JniCallCommonMethodV(&result, clazz, methodID, args);                                                               \
+        va_end(args);                                                                                                             \
+        if (ret != JNI_OK) {                                                                                                      \
+            so_loge("[JNI] CallStatic" #_jname "Method(%p,%p,%p,args): error!", env, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                     \
+        }                                                                                                                         \
+        so_logd("[JNI] CallStatic" #_jname "Method(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                            \
     }
 
-#define CALL_STATIC_TYPE_METHOD_V(_jtype, _jname)                                                                   \
-    _jtype CallStatic##_jname##MethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {               \
-        if (!clazz || !methodID) {                                                                                  \
-            so_loge("[JNI] CallStatic" #_jname "MethodV(%p,%p,%p,args): invalid arguments!", env, clazz, methodID); \
-            return (_jtype)0;                                                                                       \
-        }                                                                                                           \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                             \
-        if (!sym->addr) {                                                                                           \
-            so_loge("[JNI] CallStatic" #_jname "MethodV(%p,%p,%p,args): invalid methodID!", env, clazz, methodID);  \
-            return (_jtype)0;                                                                                       \
-        }                                                                                                           \
-        typedef _jtype (*MethodFunc)(jargs *);                                                                      \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                  \
-        jargs      jargs  = {.is_va = 1, .va = args, .index = 0};                                                   \
-        _jtype     result = method(&jargs);                                                                         \
-        so_logd("[JNI] CallStatic" #_jname "MethodV(%p,%p,%p,args): ('%s')", env, clazz, methodID, sym->name);      \
-        return result;                                                                                              \
+#define CALL_STATIC_TYPE_METHOD_V(_jtype, _jname)                                                                                  \
+    _jtype CallStatic##_jname##MethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {                              \
+        _jtype result;                                                                                                             \
+        jint   ret = JniCallCommonMethodV(&result, clazz, methodID, args);                                                         \
+        if (ret != JNI_OK) {                                                                                                       \
+            so_loge("[JNI] CallStatic" #_jname "MethodV(%p,%p,%p,args): error!", env, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                      \
+        }                                                                                                                          \
+        so_logd("[JNI] CallStatic" #_jname "MethodV(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                             \
     }
 
-#define CALL_STATIC_TYPE_METHOD_A(_jtype, _jname)                                                                   \
-    _jtype CallStatic##_jname##MethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {         \
-        if (!clazz || !methodID) {                                                                                  \
-            so_loge("[JNI] CallStatic" #_jname "MethodA(%p,%p,%p,args): invalid arguments!", env, clazz, methodID); \
-            return (_jtype)0;                                                                                       \
-        }                                                                                                           \
-        const jsymbol *sym = (const jsymbol *)methodID;                                                             \
-        if (!sym->addr) {                                                                                           \
-            so_loge("[JNI] CallStatic" #_jname "MethodA(%p,%p,%p,args): invalid methodID!", env, clazz, methodID);  \
-            return (_jtype)0;                                                                                       \
-        }                                                                                                           \
-        typedef _jtype (*MethodFunc)(jargs *);                                                                      \
-        MethodFunc method = (MethodFunc)sym->addr;                                                                  \
-        jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};                                                 \
-        _jtype     result = method(&jargs);                                                                         \
-        so_logd("[JNI] CallStatic" #_jname "MethodA(%p,%p,%p,args): ('%s')", env, clazz, methodID, sym->name);      \
-        return result;                                                                                              \
+#define CALL_STATIC_TYPE_METHOD_A(_jtype, _jname)                                                                                  \
+    _jtype CallStatic##_jname##MethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {                        \
+        _jtype result;                                                                                                             \
+        jint   ret = JniCallCommonMethodA(&result, clazz, methodID, args);                                                         \
+        if (ret != JNI_OK) {                                                                                                       \
+            so_loge("[JNI] CallStatic" #_jname "MethodA(%p,%p,%p,args): error!", env, clazz, methodID);                            \
+            return (_jtype)0;                                                                                                      \
+        }                                                                                                                          \
+        so_logd("[JNI] CallStatic" #_jname "MethodA(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name); \
+        return result;                                                                                                             \
     }
+
 CALL_STATIC_TYPE_METHOD(jobject, Object)
 CALL_STATIC_TYPE_METHOD_V(jobject, Object)
 CALL_STATIC_TYPE_METHOD_A(jobject, Object)
@@ -793,68 +632,47 @@ CALL_STATIC_TYPE_METHOD_V(jdouble, Double)
 CALL_STATIC_TYPE_METHOD_A(jdouble, Double)
 
 void CallStaticVoidMethod(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
-    if (!clazz || !methodID) {
-        so_loge("[JNI] CallStaticVoidMethod(%p,%p,%p,...): invalid arguments!", env, clazz, methodID);
-        return;
-    }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallStaticVoidMethod(%p,%p,%p,...): invalid methodID!", env, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    va_list    args;
+    jint ret;
+
+    va_list args;
     va_start(args, methodID);
-    jargs jargs = {.is_va = 1, .va = args, .index = 0};
-    method(&jargs);
+    ret = JniCallCommonMethodV(NULL, clazz, methodID, args);
     va_end(args);
-    so_logd("[JNI] CallStaticVoidMethod(%p,%p,%p): ('%s')", env, clazz, methodID, sym->name);
+
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallStaticVoidMethod(%p,%p,%p,args): error!", env, clazz, methodID);
+        return;
+    }
+    so_logd("[JNI] CallStaticVoidMethod(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallStaticVoidMethodV(JNIEnv *env, jclass clazz, jmethodID methodID, va_list args) {
-    if (!clazz || !methodID) {
-        so_loge("[JNI] CallStaticVoidMethodV(%p,%p,%p,args): invalid arguments!", env, clazz, methodID);
+    jint ret = JniCallCommonMethodV(NULL, clazz, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallStaticVoidMethodV(%p,%p,%p,args): error!", env, clazz, methodID);
         return;
     }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallStaticVoidMethodV(%p,%p,%p,args): invalid methodID!", env, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 1, .va = args, .index = 0};
-    method(&jargs);
-    so_logd("[JNI] CallStaticVoidMethodV(%p,%p,%p,args): ('%s')", env, clazz, methodID, sym->name);
+    so_logd("[JNI] CallStaticVoidMethodV(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 void CallStaticVoidMethodA(JNIEnv *env, jclass clazz, jmethodID methodID, const jvalue *args) {
-    if (!clazz || !methodID) {
-        so_loge("[JNI] CallStaticVoidMethodA(%p,%p,%p,args): invalid arguments!", env, clazz, methodID);
+    jint ret = JniCallCommonMethodA(NULL, clazz, methodID, args);
+    if (ret != JNI_OK) {
+        so_loge("[JNI] CallStaticVoidMethodA(%p,%p,%p,args): error!", env, clazz, methodID);
         return;
     }
-    const jsymbol *sym = (const jsymbol *)methodID;
-    if (!sym->addr) {
-        so_loge("[JNI] CallStaticVoidMethodA(%p,%p,%p,args): invalid methodID!", env, clazz, methodID);
-        return;
-    }
-    typedef void (*MethodFunc)(jargs *);
-    MethodFunc method = (MethodFunc)sym->addr;
-    jargs      jargs  = {.is_va = 0, .vals = args, .index = 0};
-    method(&jargs);
-    so_logd("[JNI] CallStaticVoidMethodA(%p,%p,%p,args): ('%s')", env, clazz, methodID, sym->name);
+    so_logd("[JNI] CallStaticVoidMethodA(%p,%p,%p,args): ('%s')", env, clazz, methodID, ((JniMethod *)methodID)->name);
 }
 
 jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name, const char *sig) {
-    const jsymbol *sym = JniFindField(clazz, name, sig, 1);
-    if (!sym) {
-        so_loge("[JNI] GetStaticFieldID(%p,%p,'%s','%s'): not found!", env, clazz, name, sig);
+    jfieldID fieldID = JniGetStaticFieldID(clazz, name, sig);
+    if (!fieldID) {
+        so_loge("[JNI] GetStaticFieldID(%p,%p,'%s','%s'): not found! (%s)", env, clazz, name, sig, JniGetClassName(clazz));
         return NULL;
     }
-    jfieldID id = (jfieldID)sym;
-    so_logd("[JNI] GetStaticFieldID(%p,%p,'%s','%s'): %p", env, clazz, name, sig, id);
-    return id;
+
+    so_logd("[JNI] GetStaticFieldID(%p,%p,'%s','%s'): 0x%x", env, clazz, name, sig, fieldID);
+    return fieldID;
 }
 
 #define GET_STATIC_TYPE_FIELD(_jtype, _jname)                                                              \
@@ -863,8 +681,8 @@ jfieldID GetStaticFieldID(JNIEnv *env, jclass clazz, const char *name, const cha
             so_loge("[JNI] GetStatic" #_jname "Field(%p,%p,%p): invalid arguments!", env, clazz, fieldID); \
             return (_jtype)0;                                                                              \
         }                                                                                                  \
-        const jsymbol *sym    = (const jsymbol *)fieldID;                                                  \
-        _jtype         result = *(_jtype *)sym->addr;                                                      \
+        JSymbol *sym    = (JSymbol *)fieldID;                                                              \
+        _jtype   result = *(_jtype *)sym->addr;                                                            \
         so_logd("[JNI] GetStatic" #_jname "Field(%p,%p,%p): ('%s')", env, clazz, fieldID, sym->name);      \
         return result;                                                                                     \
     }
@@ -884,7 +702,7 @@ GET_STATIC_TYPE_FIELD(jdouble, Double)
             so_loge("[JNI] SetStatic" #_jname "Field(%p,%p,%p): invalid arguments!", env, clazz, fieldID); \
             return;                                                                                        \
         }                                                                                                  \
-        const jsymbol *sym   = (const jsymbol *)fieldID;                                                   \
+        JSymbol *sym         = (JSymbol *)fieldID;                                                         \
         *(_jtype *)sym->addr = value;                                                                      \
         so_logd("[JNI] SetStatic" #_jname "Field(%p,%p,%p): ('%s')", env, clazz, fieldID, sym->name);      \
     }
@@ -1077,9 +895,9 @@ SET_ARRAY_REGION(jlong, Long)
 SET_ARRAY_REGION(jfloat, Float)
 SET_ARRAY_REGION(jdouble, Double)
 
-jint RegisterNatives(JNIEnv *env, jclass clazz, const JNINativeMethod *methods, jint numMethods) {
-    jint result = JniRegisterNatives(clazz, methods, numMethods);
-    so_logd("[JNI] RegisterNatives(%p,%p,%p,%d): %d", env, clazz, methods, numMethods, result);
+jint RegisterNatives(JNIEnv *env, jclass clazz, const JNINativeMethod *methods, jint num_methods) {
+    jint result = JniRegisterNatives(clazz, methods, num_methods);
+    so_logd("[JNI] RegisterNatives(%p,%p,%p,%d): %d", env, clazz, methods, num_methods, result);
     return result;
 }
 
@@ -1090,12 +908,12 @@ jint UnregisterNatives(JNIEnv *env, jclass clazz) {
 }
 
 jint MonitorEnter(JNIEnv *env, jobject obj) {
-    so_logw("[JNI] MonitorEnter(%p,%p): not implemented", env, obj);
+    so_logw("[JNI] MonitorEnter(%p,%p): not implemented!", env, obj);
     return JNI_OK;
 }
 
 jint MonitorExit(JNIEnv *env, jobject obj) {
-    so_logw("[JNI] MonitorExit(%p,%p): not implemented", env, obj);
+    so_logw("[JNI] MonitorExit(%p,%p): not implemented!", env, obj);
     return JNI_OK;
 }
 
@@ -1153,12 +971,13 @@ void ReleaseStringCritical(JNIEnv *env, jstring string, const jchar *carray) {
 }
 
 jweak NewWeakGlobalRef(JNIEnv *env, jobject obj) {
-    so_logw("[JNI] NewWeakGlobalRef(%p,%p): ignored", env, obj);
-    return (jweak)obj;
+    so_logw("[JNI] NewWeakGlobalRef(%p,%p)", env, obj);
+    return JniNewWeakGlobalRef(obj);
 }
 
 void DeleteWeakGlobalRef(JNIEnv *env, jweak obj) {
-    so_logw("[JNI] DeleteWeakGlobalRef(%p,%p): ignored", env, obj);
+    so_logw("[JNI] DeleteWeakGlobalRef(%p,%p)", env, obj);
+    JniDeleteWeakGlobalRef(obj);
 }
 
 jboolean ExceptionCheck(JNIEnv *env) {
@@ -1216,7 +1035,7 @@ jint JNI_GetDefaultJavaVMInitArgs(void *vm_args) {
         return JNI_ERR;
     }
 
-    so_logd("[JNI] JNI_GetDefaultJavaVMInitArgs(%p): version=0x%x, ignored", vm_args, *(jint *)vm_args);
+    so_logd("[JNI] JNI_GetDefaultJavaVMInitArgs(%p): version=0x%x", vm_args, *(jint *)vm_args);
     return JNI_OK;
 }
 

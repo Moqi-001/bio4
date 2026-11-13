@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -6,9 +5,8 @@
 #include <psp2/kernel/clib.h>
 #include <psp2/motion.h>
 #include <psp2/touch.h>
-#include <so_common/so_logger.h>
 
-#include "android/keycodes.h"
+#include <so_java/android/keycodes.h>
 #include "java/Accelerometer.h"
 #include "java/Bio4PreActivity.h"
 
@@ -114,15 +112,15 @@ static ButtonToTouch btn2touch_win2[] = {
 };
 
 #define native_touchDown(pTouchInfo, currX, currY, prevX, prevY) \
-    Bio4PreActivity_native_onTouchBegan(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
+    Bio4PreActivity_native_onTouchBegan(pTouchInfo, currX, currY, prevX, prevY)
 #define native_touchMove(pTouchInfo, currX, currY, prevX, prevY) \
-    Bio4PreActivity_native_onTouchMoved(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
+    Bio4PreActivity_native_onTouchMoved(pTouchInfo, currX, currY, prevX, prevY)
 #define native_touchUp(pTouchInfo, currX, currY, prevX, prevY) \
-    Bio4PreActivity_native_onTouchEnded(&_jni_env, Bio4PreActivity_jobject, pTouchInfo, currX, currY, prevX, prevY)
+    Bio4PreActivity_native_onTouchEnded(pTouchInfo, currX, currY, prevX, prevY)
 #define native_keyDown(keyCode, event) \
-    Bio4PreActivity_native_onKeyDown(&_jni_env, Bio4PreActivity_jobject, keyCode, event)
+    Bio4PreActivity_native_onKeyDown(keyCode, event)
 #define native_keyUp(keyCode, event) \
-    Bio4PreActivity_native_keyUp(&_jni_env, Bio4PreActivity_jobject, keyCode, event)
+    Bio4PreActivity_native_onKeyUp(keyCode, event)
 
 static int joystick_screen_offset(int v) {
     float off = v - JOYSTICK_CENTER;
@@ -144,15 +142,7 @@ void controls_poll() {
     static UITouchInfo joyInfo = {
         0, -1, -1, -1, -1};
     static SensorInfo sensorInfo = {
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-    };
-    static int      is_autofiring  = 0;
+        0, 0, 0, 0, 0, 0, 0};
     static uint32_t autofire_count = 0;
     static uint32_t old_buttons    = 0;
 
@@ -192,7 +182,7 @@ void controls_poll() {
             info->currY = map_y;
             if (info->prevX == -1 || info->prevY == -1) {
                 if (btn2touch[i].button == SCE_CTRL_LTRIGGER) {
-                    Bio4PreActivity_native_onShake(&_jni_env, Bio4PreActivity_jobject);
+                    Bio4PreActivity_native_onShake();
                 } else {
                     native_touchDown(&info, info->currX, info->currY, info->prevX, info->prevY);
                 }

@@ -3,18 +3,14 @@
 
 #include <so_common/so_logger.h>
 #include <so_jni/so_jni.h>
-#include <vitasdk.h>
-#include <vitaGL.h>
 
 #include "config.h"
 #include "utils/utils.h"
 #include "video_player.h"
 
-// static, "start","(Ljava/lang/String;F)Z"
-jboolean start(jargs *args) {  // String pFileName, float nVolume)
-    const char *pFileName = JniGetStringUTFChars(JARG(args, jstring), NULL);
-    jfloat      nVolume   = JARG(args, jfloat);
+static JClass sClass = NULL;
 
+JBoolean start(JString pFileName, JFloat nVolume) {
     char pFilePath[1024];
     char pCachePath[1024];
     snprintf(pCachePath, sizeof(pCachePath), "%s%s.mp4", SO_CACHE_DIR, pFileName);
@@ -45,20 +41,19 @@ jboolean start(jargs *args) {  // String pFileName, float nVolume)
     return JNI_TRUE;
 }
 
-// static, "nowPlaying", "()Z"
-jboolean nowPlaying() {
-    jboolean result = video_is_playing();
+JBoolean nowPlaying() {
+    JBoolean result = video_is_playing();
     so_logd("[VideoAdapter] nowPlaying(): %d", result);
     return result;
 }
 
-static jsymbol class_symbols[] = {
+static JSymbol class_symbols[] = {
     // 静态方法
-    JNI_SYMBOL_STATIC_METHOD("start", "(Ljava/lang/String;F)Z", &start),
-    JNI_SYMBOL_STATIC_METHOD("nowPlaying", "()Z", &nowPlaying),
+    JAVA_SYMBOL_STATIC_METHOD("start", "(Ljava/lang/String;F)Z", &start),
+    JAVA_SYMBOL_STATIC_METHOD("nowPlaying", "()Z", &nowPlaying),
 };
 
-static jclassMeta class_meta = {
+static JClassMeta class_meta = {
     .name          = "com/eruption/util/VideoAdapter",
     .super_name    = NULL,
     .symbols       = class_symbols,
@@ -66,6 +61,6 @@ static jclassMeta class_meta = {
     .instance_size = 0,
 };
 
-void VideoAdapter_class_init() {
-    JniCreateClass(&class_meta);
+void setup_VideoAdapter() {
+    sClass = JavaCreateClass(&class_meta);
 }

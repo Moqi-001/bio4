@@ -17,6 +17,9 @@ AlignConsecutiveAssignments: true  # 连续赋值对齐
 AlignArrayOfStructures: Left       # 结构体数组初始化对齐
 AlignTrailingComments: true        # 尾随注释对齐
 
+# 空行控制
+SeparateDefinitionBlocks: Always  # 定义块间空行: Always-插入, Never-不插, Leave-保持原样
+
 # 格式限制
 ColumnLimit: 0                   # 0-无行宽限制
 MaxEmptyLinesToKeep: 1           # 最大连续空行
@@ -32,3 +35,5 @@ IncludeBlocks: Preserve          # 包含块保持原样
 # Switch语句缩进
 IndentCaseLabels: true           # case标签缩进  
 IndentCaseBlocks: false          # case内容块缩进
+
+InsertBraces: true  # 单行语句强制加括号，防宏展开多语句逃逸 if

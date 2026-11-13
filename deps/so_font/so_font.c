@@ -23,16 +23,14 @@ typedef struct so_font {
 
 typedef struct text_line {
     const font_glyph **glyphs;
-    int                num_chars;
-    int                line_width;
+    int                num_glyphs;
 } text_line;
 
 typedef struct text_info {
     text_line         *lines;
     const font_glyph **glyphs;
     int                num_lines;
-    int                num_chars;
-    int                max_width;
+    int                num_glyphs;
 } text_info;
 
 static int utf8_to_ucs4(const unsigned char *utf8, uint32_t *codepoint) {
@@ -57,22 +55,22 @@ static int utf8_to_ucs4(const unsigned char *utf8, uint32_t *codepoint) {
     return 1;
 }
 
-so_font *so_font_load_mem(void *buffer, size_t buffer_size, int copy) {
+so_font *so_font_load_mem(void *buffer, size_t buffer_size, int take) {
     if (!buffer || buffer_size == 0) return NULL;
 
     so_font *font = calloc(1, sizeof(*font));
     if (!font)
         return NULL;
 
-    if (copy) {
+    if (take) {
+        font->font_buffer = buffer;
+    } else {
         font->font_buffer = malloc(buffer_size);
         if (!font->font_buffer) {
             free(font);
             return NULL;
         }
         memcpy(font->font_buffer, buffer, buffer_size);
-    } else {
-        font->font_buffer = buffer;
     }
     font->buffer_size = buffer_size;
 
@@ -100,12 +98,13 @@ so_font *so_font_load_mem(void *buffer, size_t buffer_size, int copy) {
         return NULL;
     }
 
-    font->num_atlases = 4;  // 初始化4个插槽（仅指针，实际图集内存在需要时才分配，每集图集对应字体大小）
-    font->atlases     = calloc(2, sizeof(font_atlas *));
+    int num_atlases = 4;  // 初始化4个插槽（仅指针，实际图集内存在需要时才分配，每集图集对应字体大小）
+    font->atlases   = calloc(num_atlases, sizeof(font_atlas *));
     if (!font->atlases) {
         so_font_unload(font);
         return NULL;
     }
+    font->num_atlases = num_atlases;
 
     sceKernelCreateLwMutex(&font->mutex, "so_font_mutex", 2, 0, NULL);
     return font;
@@ -139,9 +138,8 @@ so_font *so_font_load(const char *filepath) {
         return NULL;
     }
 
-    so_font *font = so_font_load_mem(buffer, size, 0);
-    if (!font) {
-        free(buffer);
+    so_font *font = so_font_load_mem(buffer, size, 1);
+    if (!font) {  // 移交给 load_mem，若失败则由 load_mem 负责释放 buffer
         return NULL;
     }
 
@@ -151,14 +149,14 @@ so_font *so_font_load(const char *filepath) {
 void so_font_unload(so_font *font) {
     if (!font) return;
 
-    if (font->font_buffer) {
-        free(font->font_buffer);
-    }
     if (font->ftface) {
         FT_Done_Face(font->ftface);
     }
     if (font->ftlibrary) {
         FT_Done_FreeType(font->ftlibrary);
+    }
+    if (font->font_buffer) {
+        free(font->font_buffer);
     }
     if (font->atlases) {
         for (int i = 0; i < font->num_atlases; i++) {
@@ -255,11 +253,11 @@ static const font_glyph *_font_get_glyph(so_font *font, font_atlas *atlas, uint3
     return glyph;
 }
 
-static text_info *_font_get_text_info(so_font *font, font_atlas *atlas, const char *text, int text_len) {
-    const unsigned char *p         = (unsigned char *)text;
-    const unsigned char *end       = (unsigned char *)text + text_len;
-    int                  num_lines = 1;
-    int                  num_chars = 0;
+static text_info *_font_create_text_info(so_font *font, font_atlas *atlas, const char *text, int text_len) {
+    const unsigned char *p          = (unsigned char *)text;
+    const unsigned char *end        = (unsigned char *)text + text_len;
+    int                  num_lines  = 1;
+    int                  num_glyphs = 0;
 
     while (p < end) {
         if (*p == '\n') {
@@ -287,52 +285,44 @@ static text_info *_font_get_text_info(so_font *font, font_atlas *atlas, const ch
             p += 1;
         }
 
-        num_chars++;
+        num_glyphs++;
     }
 
     text_info *info = calloc(1, sizeof(text_info));
     if (!info) {
         return NULL;
     }
-    info->lines = calloc(num_lines, sizeof(text_line));
-    if (!info->lines) {
+    text_line *lines = calloc(num_lines, sizeof(text_line));
+    if (!lines) {
         free(info);
         return NULL;
     }
-    info->glyphs = calloc(num_chars, sizeof(font_glyph *));
-    if (!info->glyphs) {
+    const font_glyph **glyphs = calloc(num_glyphs, sizeof(font_glyph *));
+    if (!glyphs) {
+        free(lines);
         free(info);
-        free(info->lines);
         return NULL;
     }
-    info->num_lines = num_lines;
-    info->num_chars = num_chars;
-    info->max_width = 0;
 
     text_line *line;
     uint32_t   codepoint;
-    int        line_idx = 0;
-    int        char_idx = 0;
-    line                = &info->lines[line_idx];
-    line->glyphs        = &info->glyphs[char_idx];
-    line->line_width    = 0;
-    line->num_chars     = 0;
+    int        line_idx  = 0;
+    int        glyph_idx = 0;
+    line                 = &lines[line_idx];
+    line->glyphs         = &glyphs[glyph_idx];
+    line->num_glyphs     = 0;
 
     p = (unsigned char *)text;
     while (p < end) {
         if (*p == '\n') {
             p++;
         break_line:
-            if (info->max_width < line->line_width) {
-                info->max_width = line->line_width;
-            }
-            if (line_idx >= info->num_lines) {
+            if (line_idx >= num_lines) {
                 break;
             }
             line_idx++;
-            line             = &info->lines[line_idx];
-            line->glyphs     = &info->glyphs[char_idx];
-            line->line_width = 0;
+            line         = &lines[line_idx];
+            line->glyphs = &glyphs[glyph_idx];
             continue;
         }
         if (*p == '\r') {
@@ -344,19 +334,21 @@ static text_info *_font_get_text_info(so_font *font, font_atlas *atlas, const ch
             continue;
         }
         p += utf8_to_ucs4(p, &codepoint);
-        if (char_idx >= info->num_chars) {
+        if (glyph_idx >= num_glyphs) {
             break;
         }
-        line->glyphs[line->num_chars] = _font_get_glyph(font, atlas, codepoint);
-        if (line->glyphs[line->num_chars]) {
-            line->line_width += line->glyphs[line->num_chars]->advance_x;
-            line->num_chars++;
-            char_idx++;
+        line->glyphs[line->num_glyphs] = _font_get_glyph(font, atlas, codepoint);
+        if (line->glyphs[line->num_glyphs]) {
+            line->num_glyphs++;
+            glyph_idx++;
         }
     }
-    if (info->max_width < line->line_width) {
-        info->max_width = line->line_width;
-    }
+    line_idx++;
+
+    info->lines      = lines;
+    info->glyphs     = glyphs;
+    info->num_lines  = line_idx;
+    info->num_glyphs = glyph_idx;
 
     return info;
 }
@@ -369,7 +361,44 @@ static void _font_free_text_info(text_info *info) {
     free(info);
 }
 
-unsigned char *so_font_create_bitmap(so_font *font, const char *text, int font_size, int linespace, int *out_width, int *out_height) {
+/* 测量文字位图，需保证缓冲区能盖住所有墨迹 */
+static void _font_measure_text_bitmap(text_info *info, const font_atlas *atlas, int line_height,
+                                      int *out_x0, int *out_y0, int *out_x1, int *out_y1) {
+    int ink_x0 = 0, ink_y0 = 0, ink_x1 = 0, ink_y1 = 0;
+    int pen_y = 0;
+
+    for (int l = 0; l < info->num_lines; l++) {
+        text_line *line  = &info->lines[l];
+        int        pen_x = 0;
+
+        for (int x = 0; x < line->num_glyphs; x++) {
+            const font_glyph *glyph = line->glyphs[x];
+            if (!glyph) {
+                continue;
+            }
+
+            int sx = pen_x + glyph->bitmap_left;
+            int sy = pen_y + (atlas->font_ascender - glyph->bitmap_top);
+            int dx = sx + glyph->bitmap_width;
+            int dy = sy + glyph->bitmap_height;
+            if (sx < ink_x0) ink_x0 = sx;
+            if (sy < ink_y0) ink_y0 = sy;
+            if (dx > ink_x1) ink_x1 = dx;
+            if (dy > ink_y1) ink_y1 = dy;
+
+            pen_x += glyph->advance_x;
+        }
+
+        pen_y += line_height;
+    }
+
+    *out_x0 = ink_x0;
+    *out_y0 = ink_y0;
+    *out_x1 = ink_x1;
+    *out_y1 = ink_y1;
+}
+
+so_bitmap *so_font_create_text_bitmap(so_font *font, const char *text, int font_size, int linespace) {
     if (!font || !text || font_size <= 0) return NULL;
 
     sceKernelLockLwMutex(&font->mutex, 1, NULL);
@@ -381,7 +410,7 @@ unsigned char *so_font_create_bitmap(so_font *font, const char *text, int font_s
     }
 
     int        text_len = strlen(text);
-    text_info *info     = _font_get_text_info(font, atlas, text, text_len);
+    text_info *info     = _font_create_text_info(font, atlas, text, text_len);
     if (!info) {
         sceKernelUnlockLwMutex(&font->mutex, 1);
         return NULL;
@@ -389,57 +418,107 @@ unsigned char *so_font_create_bitmap(so_font *font, const char *text, int font_s
 
     sceKernelUnlockLwMutex(&font->mutex, 1);
 
-    int            line_height = atlas->font_height + linespace;
-    int            max_w       = info->max_width;
-    int            max_h       = info->num_lines * line_height;
-    unsigned char *bitmap      = calloc(1, max_w * max_h);
-    if (!bitmap) {
+    int line_height = atlas->font_height + linespace;
+
+    int ink_x0, ink_y0, ink_x1, ink_y1;
+    _font_measure_text_bitmap(info, atlas, line_height, &ink_x0, &ink_y0, &ink_x1, &ink_y1);
+
+    so_bitmap *bmp = calloc(1, sizeof(*bmp));
+    if (!bmp) {
         _font_free_text_info(info);
         return NULL;
     }
 
-    int pen_y = 0;
+    bmp->width    = ink_x1 - ink_x0;
+    bmp->height   = ink_y1 - ink_y0;
+    bmp->pitch    = bmp->width;
+    bmp->origin_x = -ink_x0;
+    bmp->origin_y = -ink_y0;
+
+    if (bmp->width <= 0 || bmp->height <= 0) {
+        bmp->pixels = malloc(1);  // 分配至少 1 字节，用以兼容空文本
+    } else {
+        bmp->pixels = calloc(bmp->pitch, bmp->height);
+    }
+    if (!bmp->pixels) {
+        free(bmp);
+        _font_free_text_info(info);
+        return NULL;
+    }
+
+    int pen_y = bmp->origin_y;
+
     for (int l = 0; l < info->num_lines; l++) {
-        text_line         *line   = &info->lines[l];
-        const font_glyph **glyphs = line->glyphs;
-        int                pen_x  = 0;
+        text_line *line  = &info->lines[l];
+        int        pen_x = bmp->origin_x;
 
-        for (int x = 0; x < line->num_chars; x++) {
-            const font_glyph *glyph  = glyphs[x];
-            int               dst_x  = pen_x + glyph->bitmap_left;
-            int               dst_y  = pen_y + (atlas->font_ascender - glyph->bitmap_top);
-            int               copy_w = glyph->bitmap_width;
-            int               copy_h = glyph->bitmap_height;
-            if (dst_x + copy_w > max_w) {
-                copy_w = max_w - dst_x;
-            }
-            if (dst_y + copy_h > max_h) {
-                copy_h = max_h - dst_y;
+        for (int i = 0; i < line->num_glyphs; i++) {
+            const font_glyph *glyph = line->glyphs[i];
+            if (!glyph) {
+                continue;
             }
 
-            unsigned char *src = glyph->bitmap_buffer;
-            unsigned char *dst = bitmap + dst_x + dst_y * max_w;
+            int dst_x  = pen_x + glyph->bitmap_left;
+            int dst_y  = pen_y + (atlas->font_ascender - glyph->bitmap_top);
+            int src_x  = 0;
+            int src_y  = 0;
+            int copy_w = glyph->bitmap_width;
+            int copy_h = glyph->bitmap_height;
+
+            if (dst_x < 0) {
+                src_x = -dst_x;
+                copy_w -= src_x;
+                dst_x = 0;
+            }
+            if (dst_y < 0) {
+                src_y = -dst_y;
+                copy_h -= src_y;
+                dst_y = 0;
+            }
+            if (dst_x + copy_w > bmp->width) {
+                copy_w = bmp->width - dst_x;
+            }
+            if (dst_y + copy_h > bmp->height) {
+                copy_h = bmp->height - dst_y;
+            }
+            if (copy_w <= 0 || copy_h <= 0) {
+                pen_x += glyph->advance_x;
+                continue;
+            }
+
+            const unsigned char *src = glyph->bitmap_buffer + src_x + src_y * glyph->bitmap_pitch;
+            unsigned char       *dst = bmp->pixels + dst_x + dst_y * bmp->pitch;
             for (int y = 0; y < copy_h; y++) {
                 memcpy(dst, src, copy_w);
                 src += glyph->bitmap_pitch;
-                dst += max_w;
+                dst += bmp->pitch;
             }
+
             pen_x += glyph->advance_x;
         }
 
         pen_y += line_height;
     }
 
-    if (out_width) *out_width = max_w;
-    if (out_height) *out_height = max_h;
-
     _font_free_text_info(info);
-    return bitmap;
+    return bmp;
+}
+
+void so_font_free_bitmap(so_bitmap *bmp) {
+    if (!bmp) return;
+    if (bmp->pixels) free(bmp->pixels);
+    free(bmp);
 }
 
 size_t so_font_get_font_height(so_font *font, size_t font_size) {
-    if (FT_Set_Pixel_Sizes(font->ftface, 0, font_size) != FT_Err_Ok)
-        return 0;
+    if (!font) return 0;
 
-    return (font->ftface->size->metrics.height >> 6);
+    size_t height = 0;
+    sceKernelLockLwMutex(&font->mutex, 1, NULL);
+    if (FT_Set_Pixel_Sizes(font->ftface, 0, font_size) == FT_Err_Ok) {
+        height = (font->ftface->size->metrics.height >> 6);
+    }
+    sceKernelUnlockLwMutex(&font->mutex, 1);
+
+    return height;
 }

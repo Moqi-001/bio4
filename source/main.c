@@ -5,10 +5,10 @@
 #include <psp2/ctrl.h>
 #include <psp2/io/fcntl.h>
 #include <psp2/kernel/processmgr.h>
+#include <psp2/motion.h>
 #include <psp2/power.h>
 #include <psp2/sysmodule.h>
 #include <psp2/touch.h>
-#include <psp2/motion.h>
 
 #include "config.h"
 #include "loader.h"

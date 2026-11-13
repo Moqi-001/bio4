@@ -15,8 +15,6 @@ extern "C" {
 
 typedef struct font_atlas_page {
     struct font_atlas_page *prev;
-    int                     width;
-    int                     height;
     unsigned char          *data;
 } font_atlas_page;
 

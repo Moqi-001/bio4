@@ -1,9 +1,11 @@
 #ifndef ACCELEROMETER_H
 #define ACCELEROMETER_H
 
-void Accelerometer_class_init();
+#include <so_jni/so_jni.h>
 
-void Accelerometer_onSensorChanged(float currX, float currY, float currZ,
-                                   float prevX, float prevY, float prevZ);
+void setup_Accelerometer();
+
+void Accelerometer_onSensorChanged(JFloat currX, JFloat currY, JFloat currZ,
+                                   JFloat prevX, JFloat prevY, JFloat prevZ);
 
 #endif

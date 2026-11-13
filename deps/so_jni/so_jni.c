@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <string.h>
-
 #include "so_jni.h"
 #include "so_jni_internal.h"
 
@@ -253,18 +250,23 @@ JavaVM _java_vm = (JavaVM)&_jni_invoke_interface;
 JNIEnv _jni_env = (JNIEnv)&_jni_native_interface;
 
 jint so_jni_init(void) {
-    if (JniPushGlobalFrame() != JNI_OK) {
-        return -1;
+    if (JniInitLocalRefContext() != JNI_OK) {
+        return JNI_ERR;
     }
-    if (JniPushLocalFrame(0) != JNI_OK) {
-        return -1;
+    if (JniInitGlobalRefContext() != JNI_OK) {
+        return JNI_ERR;
+    }
+    if (JniInitWeakGlobalRefContext() != JNI_OK) {
+        return JNI_ERR;
     }
 
-    return 0;
+    return JNI_OK;
 }
 
 void so_jni_fini(void) {
-    JniClearClasses();
-    JniPopLocalFrame(NULL);
-    JniPopGlobalFrame();
+    JniFiniLocalRefContext();
+    JniFiniGlobalRefContext();
+    JniFiniWeakGlobalRefContext();
+
+    JavaReleaseAllClasses();
 }

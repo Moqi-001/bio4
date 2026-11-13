@@ -1,6 +1,6 @@
 #ifndef FILE_MANAGER_H
 #define FILE_MANAGER_H
 
-void FileManager_class_init();
+void setup_FileManager();
 
 #endif
