@@ -52,12 +52,12 @@ int soloader_patch_mce(so_module *mod) {
 }
 
 int soloader_patch_bio4(so_module *mod) {
-    JavaCall_callStaticStringMethod = so_module_find_symbol(mod, "_ZN8JavaCall22callStaticStringMethodEPKcS1_z");
-    so_module_hook_symbol(mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z", (void *)&JavaCall_callStaticCharPtrMethod, NULL);
-    so_module_hook_symbol(mod, "_ZN8PLT_Time15GetMilliSecondsEv", (void *)&PLT_Time_GetMilliSeconds, NULL);
+    JavaCall_callStaticStringMethod = so_module_find_export(mod, "_ZN8JavaCall22callStaticStringMethodEPKcS1_z");
+    so_module_hook_export(mod, "_ZN8JavaCall23callStaticCharPtrMethodEPKcS1_z", (void *)&JavaCall_callStaticCharPtrMethod, NULL);
+    so_module_hook_export(mod, "_ZN8PLT_Time15GetMilliSecondsEv", (void *)&PLT_Time_GetMilliSeconds, NULL);
 
-    so_module_hook_symbol(mod, "_ZN13GM_CtrlLayout14Set_WindowTypeEll", (void *)&GM_CtrlLayout_Set_WindowType, &GM_CtrlLayout_Set_WindowType_hook_ref);
-    so_module_hook_symbol(mod, "_ZN17GM_CtrlMain_Event11_Set_MesEndEv", (void *)&GM_CtrlMain_Event_Set_MesEnd, &GM_CtrlMain_Event_Set_MesEnd_hook_ref);
+    so_module_hook_export(mod, "_ZN13GM_CtrlLayout14Set_WindowTypeEll", (void *)&GM_CtrlLayout_Set_WindowType, &GM_CtrlLayout_Set_WindowType_hook_ref);
+    so_module_hook_export(mod, "_ZN17GM_CtrlMain_Event11_Set_MesEndEv", (void *)&GM_CtrlMain_Event_Set_MesEnd, &GM_CtrlMain_Event_Set_MesEnd_hook_ref);
 
     return 0;
 }

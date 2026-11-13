@@ -14,7 +14,7 @@
 #include "java/TextBitmap.h"
 #include "java/VideoAdapter.h"
 
-int soloader_java_init() {
+int soloader_setup_java() {
     JSystem_class_init();
 
     Accelerometer_class_init();

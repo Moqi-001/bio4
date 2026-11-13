@@ -50,7 +50,18 @@ file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
 file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
 file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c)
 file(GLOB_RECURSE SO_FONT_SRC   deps/so_font/*.c)
-file(GLOB_RECURSE SO_BIONIC_SRC deps/so_libs/reimpl/bionic/*.c)
+
+file(GLOB_RECURSE SO_LIBC_SRC          deps/so_libs/libc/*.c)
+file(GLOB_RECURSE SO_LIBCXX_SRC        deps/so_libs/libstdcxx/*.c src/so_java/*.cpp)
+file(GLOB_RECURSE SO_LIBM_SRC          deps/so_libs/libm/*.c)
+file(GLOB_RECURSE SO_LIBEGL_SRC        deps/so_libs/libEGL/*.c)
+file(GLOB_RECURSE SO_LIBGLESV1_CM_SRC  deps/so_libs/libGLESv1_CM/*.c)
+file(GLOB_RECURSE SO_LIBLOG_SRC        deps/so_libs/liblog/*.c)
+file(GLOB_RECURSE SO_LIBDL_SRC         deps/so_libs/libdl/*.c)
+file(GLOB_RECURSE SO_LIBCUTILS_SRC     deps/so_libs/libcutils/*.c)
+file(GLOB_RECURSE SO_LIBDVM_SRC        deps/so_libs/libdvm/*.c)
+
+file(GLOB_RECURSE JAVA_SRC source/java/*.c)
 
 add_executable(${CMAKE_PROJECT_NAME}
   ${SO_COMMON_SRC}
@@ -59,30 +70,20 @@ add_executable(${CMAKE_PROJECT_NAME}
   ${SO_FONT_SRC}
   ${SO_BIONIC_SRC}
 
-  deps/so_libs/reimpl/android/log.c
-  deps/so_libs/libc.c
-  deps/so_libs/libstdcpp.c
-  deps/so_libs/libm.c
-  deps/so_libs/libEGL.c
-  deps/so_libs/libGLESv1_CM.c
-  deps/so_libs/liblog.c
-  deps/so_libs/libdl.c
-  deps/so_libs/libcutils.c
-  deps/so_libs/libdvm.c
+  ${SO_LIBC_SRC}
+  ${SO_LIBCXX_SRC}
+  ${SO_LIBM_SRC}
+  ${SO_LIBEGL_SRC}
+  ${SO_LIBGLESV1_CM_SRC}
+  ${SO_LIBLOG_SRC}
+  ${SO_LIBDL_SRC}
+  ${SO_LIBCUTILS_SRC}
+  ${SO_LIBDVM_SRC}
+
+  ${JAVA_SRC}
 
   source/utils/dialog.c
   source/utils/utils.c
-
-  source/java/lang/System.c
-  source/java/AudioPlayer.c
-  source/java/AssetFileInfo.c
-  source/java/Bio4PreActivity.c
-  source/java/DeviceInfo.c
-  source/java/FileManager.c
-  source/java/StereoViewAdapter.c
-  source/java/TextBitmap.c
-  source/java/Accelerometer.c
-  source/java/VideoAdapter.c
 
   source/controls.c
   source/java.c

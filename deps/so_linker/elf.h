@@ -866,7 +866,10 @@ typedef struct
 #define DT_PREINIT_ARRAY   32          /* Array with addresses of preinit fct*/
 #define DT_PREINIT_ARRAYSZ 33          /* size in bytes of DT_PREINIT_ARRAY */
 #define DT_SYMTAB_SHNDX    34          /* Address of SYMTAB_SHNDX section */
-#define DT_NUM             35          /* Number used */
+#define DT_RELRSZ          35          /* Total size of Relr relocs */
+#define DT_RELR            36          /* Address of Relr relocs */
+#define DT_RELRENT         37          /* Size of one Relr reloc */
+#define DT_NUM             38          /* Number used */
 #define DT_LOOS            0x6000000d  /* Start of OS-specific */
 #define DT_HIOS            0x6ffff000  /* End of OS-specific */
 #define DT_LOPROC          0x70000000  /* Start of processor-specific */

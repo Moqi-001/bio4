@@ -9,7 +9,7 @@ extern "C" {
 
 #include "java/Bio4PreActivity.h"
 
-int soloader_java_init();
+int soloader_setup_java();
 
 #ifdef __cplusplus
 };

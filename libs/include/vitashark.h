@@ -39,6 +39,11 @@ typedef enum shark_type {
 	SHARK_FRAGMENT_SHADER
 } shark_type;
 
+typedef enum shark_locale {
+	SHARK_LOCALE_ENGLISH,
+	SHARK_LOCALE_JAPANESE
+} shark_locale;
+
 typedef enum shark_log_level {
 	SHARK_LOG_INFO,
 	SHARK_LOG_WARNING,
@@ -58,6 +63,7 @@ typedef enum shark_warn_level {
 
 // Init/term routines
 int shark_init(const char *path); //!< Initializes runtime shader compiler
+int shark_init_simple(const char *path); //!< Initializes runtime shader compiler with Vita3K compatibility
 void shark_end(); //!< Terminates runtime shader compiler and frees used memory
 void shark_set_allocators(void *(*malloc_func)(size_t size), void (*free_func)(void *ptr)); // Sets custom allocators used by the shader compiler
 
@@ -70,6 +76,12 @@ const SceShaccCgCompileOutput *shark_get_internal_compile_output(); //!< Returns
 // Logging routines
 void shark_install_log_cb(void (*cb)(const char *msg, shark_log_level msg_level, int line)); //!< Installs a log function for info, warnings and errors
 void shark_set_warnings_level(shark_warn_level level); //!< Sets warnings level for logging
+
+// Debug routines
+void shark_set_shader_association_path(const char *path); //!< Sets path where to save shader association files for Razor (Disabled if not set)
+
+// Misc routines
+void shark_set_locale(shark_locale locale); //!< Set locale for warnings/errors. Default is SHARK_LOCALE_ENGLISH
 
 #ifdef __cplusplus
 }

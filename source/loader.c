@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <kubridge.h>
 #include <psp2/kernel/processmgr.h>
 #include <psp2/vshbridge.h>
 #include <so_common/so_logger.h>
@@ -10,28 +11,40 @@
 
 #include "config.h"
 #include "java.h"
+#include "java/Bio4PreActivity.h"
 #include "loader.h"
 #include "patch.h"
 #include "utils/dialog.h"
 #include "utils/utils.h"
 
-extern so_library so_library_c;
-extern so_library so_library_stdcpp;
-extern so_library so_library_m;
-extern so_library so_library_EGL;
-extern so_library so_library_GLESv1_CM;
-extern so_library so_library_log;
-extern so_library so_library_dl;
-extern so_library so_library_cutils;
-extern so_library so_library_dvm;
+extern so_library libc_so;
+extern so_library libstdcxx_so;
+extern so_library libm_so;
+extern so_library libEGL_so;
+extern so_library libGLESv1_CM_so;
+extern so_library liblog_so;
+extern so_library libdl_so;
+extern so_library libcutils_so;
+extern so_library libdvm_so;
 
 so_module *mce_mod  = NULL;
 so_module *bio4_mod = NULL;
 
+/* 为了兼容vita3k。vita3k不需要插件，但它有kuKernelMemProtect函数实现。
+ * 当判断插件加载失败时再判断这个函数是否有绑定，这样的判断可实现对实机和vita3k都通用。*/
+static int is_unbound_stub(const void *fn) {
+    if (!fn) {
+        return 1;
+    }
+
+    const uint32_t *stub = (const uint32_t *)((uintptr_t)fn & ~(uintptr_t)1);
+    return (stub[0] == 0xE24FC008u && stub[1] == 0xE3A0F000u);  // 未绑定时的指令
+}
+
 static int check_kubridge() {
     int search_unk[2];
-    if (_vshKernelSearchModuleByName("kubridge", search_unk) < 0) {
-        fatal_error("Error: kubridge.skprx is not installed.");
+    if (_vshKernelSearchModuleByName("kubridge", search_unk) < 0 && is_unbound_stub(kuKernelMemProtect)) {
+        fatal_error("[LOADER] kubridge.skprx is not installed.");
         return -1;
     }
     return 0;
@@ -47,16 +60,35 @@ static int check_opengl() {
     return 0;
 }
 
-static int init_needed_modules() {
-    so_module_create(&so_library_c);
-    so_module_create(&so_library_stdcpp);
-    so_module_create(&so_library_m);
-    so_module_create(&so_library_EGL);
-    so_module_create(&so_library_GLESv1_CM);
-    so_module_create(&so_library_log);
-    so_module_create(&so_library_dl);
-    so_module_create(&so_library_cutils);
-    so_module_create(&so_library_dvm);
+static int soloader_init_opengl() {
+    static int opengl_inited = 0;
+    if (!opengl_inited) {
+        vglInitParams params;
+        memset(&params, 0, sizeof(vglInitParams));
+        params.width             = SCREEN_W;
+        params.height            = SCREEN_H;
+        params.ram_threshold     = VITAGL_RAM_THRESHOLD_MB * 1024 * 1024;
+        params.cdram_threshold   = VITAGL_CDRAM_THRESHOLD_MB * 1024 * 1024;
+        params.phycont_threshold = VITAGL_PHYCONT_THRESHOLD_MB * 1024 * 1024;
+        params.cdlg_threshold    = VITAGL_CDIALOG_THRESHOLD_MB * 1024 * 1024;
+        params.msaa              = VGL_MSAA_4X;
+        vglInit(&params);
+        opengl_inited = 1;
+    }
+
+    return 0;
+}
+
+static int soloader_setup_modules() {
+    so_module_create(&libc_so);
+    so_module_create(&libstdcxx_so);
+    so_module_create(&libm_so);
+    so_module_create(&libEGL_so);
+    so_module_create(&libGLESv1_CM_so);
+    so_module_create(&liblog_so);
+    so_module_create(&libdl_so);
+    so_module_create(&libcutils_so);
+    so_module_create(&libdvm_so);
 
     return 0;
 }
@@ -71,12 +103,12 @@ so_module *soloader_load_library(const char *soname) {
         return NULL;
     }
 
-    so_logd("[LOADER] load_library success: soname='%s', load_base=%p", so_module_name(mod), so_module_load_base(mod));
+    so_logd("[LOADER] load_library success: soname='%s', load_base=%p", so_module_get_name(mod), so_module_get_load_base(mod));
     return mod;
 }
 
 int soloader_jni_onload(so_module *mod) {
-    jint (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_symbol(mod, "JNI_OnLoad");
+    jint (*JNI_OnLoad)(JavaVM *, void *) = so_module_find_export(mod, "JNI_OnLoad");
     if (JNI_OnLoad) {
         if (JNI_CALL_TYPE_NATIVE(jint, JNI_OnLoad, &_java_vm, NULL) < 0) {
             fatal_error("JNI_OnLoad: error!");
@@ -94,8 +126,8 @@ int soloader_init() {
     check_opengl();
     so_linker_init();
     so_jni_init();
-    init_needed_modules();
-    soloader_java_init();
+    soloader_setup_modules();
+    soloader_setup_java();
 
     mce_mod = soloader_load_library("mc_eruption_for_android_jni");
     soloader_patch_mce(mce_mod);
@@ -103,11 +135,7 @@ int soloader_init() {
     bio4_mod = soloader_load_library("bio4af");
     soloader_patch_bio4(bio4_mod);
 
-    vglInitWithCustomThreshold(0, SCREEN_W, SCREEN_H,
-                               VITAGL_RAM_THRESHOLD_MB * 1024 * 1024,
-                               VITAGL_CDRAM_THRESHOLD_MB * 1024 * 1024,
-                               VITAGL_PHYCONT_THRESHOLD_MB * 1024 * 1024,
-                               0, SCE_GXM_MULTISAMPLE_4X);
+    soloader_init_opengl();
 
     so_logd("[LOADER] soloader_init success!");
 
