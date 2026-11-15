@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/source",
-                "${workspaceFolder}/deps",
+                "${workspaceFolder}/vendor",
                 "${workspaceFolder}/libs/include"
             ],
             "defines": [

@@ -11,15 +11,16 @@
 static JClass sClass = NULL;
 
 JBoolean start(JString pFileName, JFloat nVolume) {
-    char pFilePath[1024];
-    char pCachePath[1024];
-    snprintf(pCachePath, sizeof(pCachePath), "%s%s.mp4", SO_CACHE_DIR, pFileName);
+    const char *pFileName_cstr = String_getUTFChars(pFileName);
+    char        pFilePath[1024];
+    char        pCachePath[1024];
+    snprintf(pCachePath, sizeof(pCachePath), "%s%s.mp4", SO_CACHE_DIR, pFileName_cstr);
 
     if (!file_exists(pCachePath)) {
-        snprintf(pFilePath, sizeof(pFilePath), "%s%s.png", SO_ASSETS_DIR, pFileName);
+        snprintf(pFilePath, sizeof(pFilePath), "%s%s.png", SO_ASSETS_DIR, pFileName_cstr);
         // 创建 cache
         if (!file_copy(pFilePath, pCachePath)) {
-            so_logd("[VideoAdapter] start('%s',%f): failed to create cache!", pFileName, nVolume);
+            so_logd("[VideoAdapter] start('%s',%f): failed to create cache!", pFileName_cstr, nVolume);
             return JNI_FALSE;
         }
         // 修改 major_brand: M4VP -> mp42
@@ -33,11 +34,11 @@ JBoolean start(JString pFileName, JFloat nVolume) {
     }
 
     if (video_start(pCachePath, nVolume) < 0) {
-        so_logd("[VideoAdapter] start('%s',%f): failed to start video!", pFileName, nVolume);
+        so_logd("[VideoAdapter] start('%s',%f): failed to start video!", pFileName_cstr, nVolume);
         return JNI_FALSE;
     }
 
-    so_logd("[VideoAdapter] start('%s',%f)", pFileName, nVolume);
+    so_logd("[VideoAdapter] start('%s',%f)", pFileName_cstr, nVolume);
     return JNI_TRUE;
 }
 

@@ -48,21 +48,21 @@ endif()
 
 enable_language(ASM)
 
-file(GLOB_RECURSE SO_COMMON_SRC deps/so_common/*.c)
-file(GLOB_RECURSE SO_LINKER_SRC deps/so_linker/*.c)
-file(GLOB_RECURSE SO_JAVA_SRC   deps/so_java/*.c deps/so_java/*.cpp)
-file(GLOB_RECURSE SO_JNI_SRC    deps/so_jni/*.c deps/so_jni/*.S)
-file(GLOB_RECURSE SO_FONT_SRC   deps/so_font/*.c)
+file(GLOB_RECURSE SO_COMMON_SRC vendor/so_common/*.c)
+file(GLOB_RECURSE SO_LINKER_SRC vendor/so_linker/*.c)
+file(GLOB_RECURSE SO_JAVA_SRC   vendor/so_java/*.c vendor/so_java/*.cpp)
+file(GLOB_RECURSE SO_JNI_SRC    vendor/so_jni/*.c vendor/so_jni/*.S)
+file(GLOB_RECURSE SO_FONT_SRC   vendor/so_font/*.c)
 
-file(GLOB_RECURSE SO_LIBC_SRC          deps/so_libs/libc/*.c)
-file(GLOB_RECURSE SO_LIBCXX_SRC        deps/so_libs/libstdcxx/*.c src/so_java/*.cpp)
-file(GLOB_RECURSE SO_LIBM_SRC          deps/so_libs/libm/*.c)
-file(GLOB_RECURSE SO_LIBEGL_SRC        deps/so_libs/libEGL/*.c)
-file(GLOB_RECURSE SO_LIBGLESV1_CM_SRC  deps/so_libs/libGLESv1_CM/*.c)
-file(GLOB_RECURSE SO_LIBLOG_SRC        deps/so_libs/liblog/*.c)
-file(GLOB_RECURSE SO_LIBDL_SRC         deps/so_libs/libdl/*.c)
-file(GLOB_RECURSE SO_LIBCUTILS_SRC     deps/so_libs/libcutils/*.c)
-file(GLOB_RECURSE SO_LIBDVM_SRC        deps/so_libs/libdvm/*.c)
+file(GLOB_RECURSE SO_LIBC_SRC          vendor/so_libs/libc/*.c)
+file(GLOB_RECURSE SO_LIBCXX_SRC        vendor/so_libs/libstdcxx/*.c src/so_java/*.cpp)
+file(GLOB_RECURSE SO_LIBM_SRC          vendor/so_libs/libm/*.c)
+file(GLOB_RECURSE SO_LIBEGL_SRC        vendor/so_libs/libEGL/*.c)
+file(GLOB_RECURSE SO_LIBGLESV1_CM_SRC  vendor/so_libs/libGLESv1_CM/*.c)
+file(GLOB_RECURSE SO_LIBLOG_SRC        vendor/so_libs/liblog/*.c)
+file(GLOB_RECURSE SO_LIBDL_SRC         vendor/so_libs/libdl/*.c)
+file(GLOB_RECURSE SO_LIBCUTILS_SRC     vendor/so_libs/libcutils/*.c)
+file(GLOB_RECURSE SO_LIBDVM_SRC        vendor/so_libs/libdvm/*.c)
 
 file(GLOB_RECURSE JAVA_SRC source/java/*.c)
 
@@ -99,7 +99,7 @@ add_executable(${CMAKE_PROJECT_NAME}
 target_include_directories(${CMAKE_PROJECT_NAME} SYSTEM
   PUBLIC ${CMAKE_SOURCE_DIR}/libs/include
   PUBLIC ${CMAKE_SOURCE_DIR}/libs/include/freetype2
-  PUBLIC ${CMAKE_SOURCE_DIR}/deps
+  PUBLIC ${CMAKE_SOURCE_DIR}/vendor
 )
 
 target_include_directories(${CMAKE_PROJECT_NAME}

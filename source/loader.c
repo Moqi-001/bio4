@@ -80,15 +80,15 @@ static int soloader_init_opengl() {
 }
 
 static int soloader_setup_modules() {
-    so_module_create(&libc_so);
-    so_module_create(&libstdcxx_so);
-    so_module_create(&libm_so);
-    so_module_create(&libEGL_so);
-    so_module_create(&libGLESv1_CM_so);
-    so_module_create(&liblog_so);
-    so_module_create(&libdl_so);
-    so_module_create(&libcutils_so);
-    so_module_create(&libdvm_so);
+    so_module_create_virtual(&libc_so);
+    so_module_create_virtual(&libstdcxx_so);
+    so_module_create_virtual(&libm_so);
+    so_module_create_virtual(&libEGL_so);
+    so_module_create_virtual(&libGLESv1_CM_so);
+    so_module_create_virtual(&liblog_so);
+    so_module_create_virtual(&libdl_so);
+    so_module_create_virtual(&libcutils_so);
+    so_module_create_virtual(&libdvm_so);
 
     return 0;
 }
